@@ -1,3 +1,3 @@
 from imageWorker import ImageWorker
 
-print("elo")
+print("test")
