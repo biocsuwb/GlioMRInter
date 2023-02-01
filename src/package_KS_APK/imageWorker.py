@@ -1,7 +1,9 @@
 import os
+import re
 import cv2
 import pydicom
 import numpy as np
+import pandas as pd
 from keras import models, layers
 from keras.utils import to_categorical
 from sklearn.preprocessing import LabelEncoder
@@ -11,8 +13,24 @@ from sklearn.model_selection import train_test_split, StratifiedKFold
 class ImageWorker:
 
     def __init__(self, data_path):
+        self.ids = None
         self.data_path = data_path
         self.number_of_classes = -1
+
+    def load_data(self, file_path):
+        print(f'NOWY STATUS: Wczytuję ID z pliku .xlsx...')
+        self.ids = pd.read_excel(file_path, header=None, names=['ID', 'VALUE'])
+        print(self.ids)
+
+    def get_value(self, label):
+        if self.ids is None:
+            print("Dataframe 'ids' nie został wczytany.")
+            return None
+
+        try:
+            return self.ids[self.ids['ID'] == label]['VALUE'].values[0]
+        except IndexError:
+            return None
 
     def read_dicom_images(self):
         """
@@ -22,21 +40,44 @@ class ImageWorker:
         images = []
         labels = []
         filesCounter = 0
+        filesPerFolder = 2000
+
+        startPercent = 0.6
+        endPercent = 0.7
+        quitFlag = False
         for root, dirs, files in os.walk(self.data_path):
-            if (filesCounter > 5000): break
+            if (quitFlag): break
+
+            print(f'Foldery: {dirs}')
             for dir in dirs:
-                if (filesCounter > 5000): break
+                print(f'Wchodzę w folder "{dir}"...')
+                if (quitFlag):
+                    break
                 for subdir,subdirs,subfiles in os.walk(os.path.join(root,dir)):
-                    if (filesCounter > 5000): break
-                    for subfile in subfiles:
-                        if subfile.endswith('.dcm'):
-                            ds = pydicom.dcmread(os.path.join(subdir,subfile))
-                            image = ds.pixel_array
-                            image = cv2.resize(image, (512, 512))
-                            images.append(image)
-                            labels.append(dir)
-                            print(f'Wczytano: {filesCounter}/722347 plików ({round((filesCounter/722347) * 100, 2)}%)')
-                            filesCounter += 1
+                    if (quitFlag):
+                        break
+                    if (len(subfiles) >= 5):
+                        #print(f'Jest {len(subfiles)} zdjęć, a ja biorę tylko od {int(len(subfiles) * startPercent)} do {int(len(subfiles) * endPercent)}')
+                        for subfile in subfiles[int(len(subfiles) * startPercent):int(len(subfiles) * endPercent)]:
+                            if (filesCounter > filesPerFolder):
+                                quitFlag = True
+                                break
+                            if subfile.endswith('.dcm'):
+                                ds = pydicom.dcmread(os.path.join(subdir,subfile))
+
+                                label = re.split("[\\\\/]", str(subdir))[4]
+                                if self.get_value(label) not in ["Dead", "Alive"]:
+                                    continue
+                                else:
+                                    labels.append(self.get_value(label))
+
+                                    image = ds.pixel_array
+                                    image = cv2.resize(image, (512, 512))
+                                    images.append(image)
+
+                                    print(f'[{label}] Wczytano: {filesCounter}/722347 plików ({round((filesCounter/722347) * 100, 2)}%)')
+                                    filesCounter += 1
+
         print(f'NOWY STATUS: Wczytywanie zakończono...')
         return np.array(images),np.array(labels)
 
@@ -112,5 +153,6 @@ if __name__ == '__main__':
     print(f'NOWY STATUS: Rozpoczynam działanie...')
     data_path = 'D:/Magisterka/Dane'
     image_worker = ImageWorker(data_path)
+    image_worker.load_data('D:/Magisterka/IDs.xlsx')
     X_train, X_test, y_train, y_test = image_worker.preprocessing()
     image_worker.cross_validate(X_train, y_train)
