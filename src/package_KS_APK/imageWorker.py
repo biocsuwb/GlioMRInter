@@ -87,7 +87,7 @@ class ImageWorker:
         le = LabelEncoder()
         y = le.fit_transform(y)
         y = to_categorical(y)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2) # <- !!!!
         X_train = X_train.reshape(X_train.shape[0], 512, 512, 1)
         X_test = X_test.reshape(X_test.shape[0], 512, 512, 1)
         self.number_of_classes = len(np.unique(y_train))
@@ -129,7 +129,7 @@ class ImageWorker:
 
         return data_gen.flow(x_train, y_train, batch_size=32)
 
-    def cross_validate(self, x, y, n_splits=5):
+    def cross_validate(self, x, y, n_splits=3):
         """
         Funkcja zastosowuje kroswalidację stratyfikowaną i augmentację danych, po
         czym trenuje i waliduje model.
@@ -156,3 +156,22 @@ if __name__ == '__main__':
     image_worker.load_data('D:/Magisterka/IDs.xlsx')
     X_train, X_test, y_train, y_test = image_worker.preprocessing()
     image_worker.cross_validate(X_train, y_train)
+
+
+
+'''
+* Wyciągnąć więcej metryk
+* Kroswalidacja!!!
+* Czy gdzieś jest MCC - metryka musi się pojawić!!!
+* Cząstkowe zrzuty modelu
+* Wyciągać z kroswalidacji co zostało wzięte do jakiejś grupy
+
+[17:46] Polewko-Klim Aneta
+# zapis protokołu obliczeniowego do pliku piclewith open('protocole.pickle', 'wb') as f:    pickle.dump(protocole, f)
+
+[17:47] Polewko-Klim Aneta
+# odczyt protokołu obliczeniowego do pliku piclewith open('protocole.pickle', 'rb') as f:    protocole2 = pickle.load(f)
+
+* biblioteka seaborn
+* raport z metryk
+'''
