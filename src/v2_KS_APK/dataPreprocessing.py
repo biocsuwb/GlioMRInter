@@ -61,19 +61,34 @@ class DataPreprocessing:
                                 break
                             if subfile.endswith('.dcm'):
                                 ds = pydicom.dcmread(os.path.join(subdir,subfile))
+                                if not 'PixelData' in ds:
+                                    continue
 
                                 label = re.split("[\\\\/]", str(subdir))[4]
                                 if self.get_id(label) not in ["Dead", "Alive"]:
                                     continue
                                 else:
-                                    labels.append(self.get_id(label))
+                                    labels.append(0 if self.get_id(label) == "Dead" else 1)
 
-                                    image = ds.pixel_array
-                                    image = cv2.resize(image, (512, 512))
+                                    pixel_array = ds.pixel_array
+                                    # skalowanie obrazu do wymiarów 512x512
+                                    pixel_array = cv2.resize(pixel_array, (512, 512))
+                                    # usuwanie kanałów koloru, pozostawienie tylko kanału zielonego
+                                    if len(pixel_array.shape) > 2:
+                                        pixel_array = pixel_array[:,:,1]
+                                    # Dopasowanie obrazu do jednorodnego kształtu
+                                    pixel_array = pixel_array.reshape((1,) + pixel_array.shape)
+
+                                    image = pixel_array
+                                    #image = cv2.resize(image, (512, 512))
                                     images.append(image)
 
                                     print(f'[{label}] Wczytano: {filesCounter}/722347 plików ({round((filesCounter/722347) * 100, 2)}%)')
                                     filesCounter += 1
+                            break # <-- TYLKO JEDNO ZDJĘCIE
+
+        for image in images:
+            print(image.shape)
 
         self.number_of_classes = len(np.unique(labels))
 
