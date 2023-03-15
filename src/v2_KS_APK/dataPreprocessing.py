@@ -9,9 +9,8 @@ class DataPreprocessing:
     def __init__(self):
         pass
 
-    def imagesPrep(self, data_path, ids_path):
-        self.ids = self.load_ids(ids_path)
-        print(self.ids)
+    def imagesPrep(self, data_path):
+        self.ids = None#self.load_ids(ids_path)
         self.data_path = data_path
         self.X, self.y = self.read_dicom_images()
 
@@ -36,8 +35,50 @@ class DataPreprocessing:
         print(f'NOWY STATUS: Wczytuję zdjęcia w formacie DICOM...')
         images = []
         labels = []
+
+        max_files_per_folder = 1000
+
+        for folder_name in os.listdir(self.data_path):
+            folder_path = os.path.join(self.data_path, folder_name)
+            if os.path.isdir(folder_path):
+                num_files = 0
+                for patient_id in os.listdir(folder_path):
+                    patient_path = os.path.join(folder_path, patient_id)
+                    if os.path.isdir(patient_path):
+                        for file_name in os.listdir(patient_path):
+                            file_path = os.path.join(patient_path, file_name)
+                            if file_name.endswith(".dcm") and num_files < max_files_per_folder:
+                                try:
+                                    ds = pydicom.dcmread(file_path)
+                                    pixel_array = ds.pixel_array
+                                    # skalowanie obrazu do wymiarów 512x512
+                                    pixel_array = cv2.resize(pixel_array, (512, 512))
+                                    # usuwanie kanałów koloru, pozostawienie tylko kanału zielonego
+                                    if len(pixel_array.shape) > 2:
+                                        pixel_array = pixel_array[:,:,1]
+                                    # Dopasowanie obrazu do jednorodnego kształtu
+                                    pixel_array = pixel_array.reshape((1,) + pixel_array.shape)
+
+                                    image = pixel_array
+                                    #image = cv2.resize(image, (512, 512))
+                                    images.append(image)
+                                    labels.append(int(folder_name))
+                                    num_files += 1
+                                    print(f'[{patient_id}] Wczytano plik {file_name}. (Łącznie: {num_files} plików.)')
+                                except Exception as e:
+                                    print("Error reading file {}: {}".format(file_path, e))
+
+        return np.array(images), np.array(labels)
+
+    def read_dicom_imagesOLD(self):
+        """
+        Funkcja odczytuje pliki DICOM z podanego folderu i zwraca je jako tablicę numpy.
+        """
+        print(f'NOWY STATUS: Wczytuję zdjęcia w formacie DICOM...')
+        images = []
+        labels = []
         filesCounter = 0
-        filesPerFolder = 2000
+        filesPerFolder = 5000
 
         startPercent = 0.6
         endPercent = 0.7
@@ -85,7 +126,7 @@ class DataPreprocessing:
 
                                     print(f'[{label}] Wczytano: {filesCounter}/722347 plików ({round((filesCounter/722347) * 100, 2)}%)')
                                     filesCounter += 1
-                            break # <-- TYLKO JEDNO ZDJĘCIE
+                            #break # <-- TYLKO JEDNO ZDJĘCIE
 
         for image in images:
             print(image.shape)

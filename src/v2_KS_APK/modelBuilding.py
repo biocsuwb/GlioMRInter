@@ -34,6 +34,9 @@ class ModelBuilding:
                       loss='binary_crossentropy',
                      metrics=['accuracy'])
 
+                     #, 'precision', 'recall', 'f1_score', 'auc', 'MCC'
+                     #tf.keras.metrics.Accuracy(), tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()
+
         '''
         - Accuracy: procent poprawnych predykcji względem całkowitej liczby próbek.
         - Binary accuracy: procent poprawnych predykcji w przypadku zadania binarnej klasyfikacji.
