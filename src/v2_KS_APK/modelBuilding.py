@@ -51,13 +51,19 @@ class ModelBuilding:
 
     def cross_validation(self, X, y, model, data, n_splits=3, test_size=0.3):
 
-        #print(f'X: {X}, Y:{y}')
         newX = np.concatenate(X, axis=0)
 
         sss = model_selection.StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size)
-        splits = sss.split(X, y)
+        splits = sss.split(newX, y)
 
-        for i, (train_id, test_id) in enumerate(sss.split(newX, y)):
+        acc_scores = []
+        precision_scores = []
+        recall_scores = []
+        f1_scores = []
+        auc_scores = []
+        mcc_scores = []
+
+        for i, (train_id, test_id) in enumerate(splits):
             print(f"Fold {i}:")
             print(f"  Train: index={train_id}")
             print(f"  Test:  index={test_id}")
@@ -68,14 +74,35 @@ class ModelBuilding:
             y_test = y[test_id]
 
             augmented_data = data.augment_data(X_train, y_train)
-            print(augmented_data[0])
+
             print(f'NOWY STATUS: Trenuję dane...')
             model.fit(augmented_data, epochs=10)
 
-            #print(f'X_train:\n{X_train}\n\ny_train:\n{y_train}')
+            y_pred = model.predict(X_test)
+            y_pred = np.round(y_pred)
 
-            #self.clf_rf.fit(X_train, y_train)
-            #self.clf_rf.score(X_test, y_test)
+            acc_scores.append(metrics.accuracy_score(y_test, y_pred))
+            precision_scores.append(metrics.precision_score(y_test, y_pred))
+            recall_scores.append(metrics.recall_score(y_test, y_pred))
+            f1_scores.append(metrics.f1_score(y_test, y_pred))
+            auc_scores.append(metrics.roc_auc_score(y_test, y_pred))
+            mcc_scores.append(metrics.matthews_corrcoef(y_test, y_pred))
+
+            print(f"  Accuracy: {acc_scores[-1]:.3f}")
+            print(f"  Precision: {precision_scores[-1]:.3f}")
+            print(f"  Recall: {recall_scores[-1]:.3f}")
+            print(f"  F1: {f1_scores[-1]:.3f}")
+            print(f"  AUC: {auc_scores[-1]:.3f}")
+            print(f"  MCC: {mcc_scores[-1]:.3f}")
+
+        print("Cross-validation summary:")
+        print(f"  Accuracy: {np.mean(acc_scores):.3f} ± {np.std(acc_scores):.3f}")
+        print(f"  Precision: {np.mean(precision_scores):.3f} ± {np.std(precision_scores):.3f}")
+        print(f"  Recall: {np.mean(recall_scores):.3f} ± {np.std(recall_scores):.3f}")
+        print(f"  F1: {np.mean(f1_scores):.3f} ± {np.std(f1_scores):.3f}")
+        print(f"  AUC: {np.mean(auc_scores):.3f} ± {np.std(auc_scores):.3f}")
+        print(f"  MCC: {np.mean(mcc_scores):.3f} ± {np.std(mcc_scores):.3f}")
+
 
     def model_write(self):
 
