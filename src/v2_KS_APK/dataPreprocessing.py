@@ -1,6 +1,6 @@
 from . import *
 
-class DataPreprocessing:
+class ImageDataPreprocessing:
 
     X = None
     y = None
@@ -9,10 +9,11 @@ class DataPreprocessing:
     def __init__(self):
         pass
 
-    def imagesPrep(self, data_path):
-        self.ids = None#self.load_ids(ids_path)
+    def imagesPrep(self, data_path, ids_path):
+        self.load_ids(ids_path)
         self.data_path = data_path
         self.X, self.y = self.read_dicom_images()
+        #self.X, self.y = self.read_images()
 
     def load_ids(self, ids_path):
         print(f'NOWY STATUS: Wczytuję ID z pliku .xlsx...')
@@ -28,6 +29,44 @@ class DataPreprocessing:
         except IndexError:
             return None
 
+    def read_images(self):
+        print(f'NOWY STATUS: Wczytuję zdjęcia...')
+
+        images = []
+        labels = []
+
+        max_files_per_folder = 100
+
+        for folder_name in os.listdir(self.data_path):
+            folder_path = os.path.join(self.data_path, folder_name)
+            if os.path.isdir(folder_path):
+                num_files = 0
+
+                for file_name in os.listdir(folder_path):
+                    file_path = os.path.join(folder_path, file_name)
+                    if file_name.endswith(".png") and num_files < max_files_per_folder:
+                        try:
+                            # Wczytanie pliku obrazu .png lub .jpg
+                            image = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
+
+                            if image is not None:
+                                # Skalowanie obrazu do wymiarów 512x512
+                                image = cv2.resize(image, (512, 512))
+
+                                # Dopasowanie obrazu do jednorodnego kształtu
+                                image = image.reshape((1,) + image.shape)
+
+                                images.append(image)
+                                labels.append(int(folder_name))
+                                num_files += 1
+                                print(f'[{patient_id}] Wczytano plik {file_name}. (Łącznie: {num_files} plików.)')
+                            else:
+                                print(f"Nie udało się wczytać pliku {file_path}.")
+                        except Exception as e:
+                            print("Error reading file {}: {}".format(file_path, e))
+
+        return np.array(images), np.array(labels)
+
     def read_dicom_images(self):
         """
         Funkcja odczytuje pliki DICOM z podanego folderu i zwraca je jako tablicę numpy.
@@ -36,105 +75,43 @@ class DataPreprocessing:
         images = []
         labels = []
 
-        max_files_per_folder = 1000
+        max_files_per_class = 500
+        max_files_per_patient = 10
 
         for folder_name in os.listdir(self.data_path):
             folder_path = os.path.join(self.data_path, folder_name)
             if os.path.isdir(folder_path):
-                num_files = 0
+                num_files_per_class = 0
                 for patient_id in os.listdir(folder_path):
                     patient_path = os.path.join(folder_path, patient_id)
                     if os.path.isdir(patient_path):
+                        num_files_per_patient = 0
                         for file_name in os.listdir(patient_path):
-                            file_path = os.path.join(patient_path, file_name)
-                            if file_name.endswith(".dcm") and num_files < max_files_per_folder:
-                                try:
-                                    ds = pydicom.dcmread(file_path)
-                                    pixel_array = ds.pixel_array
-                                    # skalowanie obrazu do wymiarów 512x512
-                                    pixel_array = cv2.resize(pixel_array, (512, 512))
-                                    # usuwanie kanałów koloru, pozostawienie tylko kanału zielonego
-                                    if len(pixel_array.shape) > 2:
-                                        pixel_array = pixel_array[:,:,1]
-                                    # Dopasowanie obrazu do jednorodnego kształtu
-                                    pixel_array = pixel_array.reshape((1,) + pixel_array.shape)
+                            if (num_files_per_patient < max_files_per_patient):
+                                file_path = os.path.join(patient_path, file_name)
+                                if file_name.endswith(".dcm") and num_files_per_class < max_files_per_class:
+                                    try:
+                                        ds = pydicom.dcmread(file_path)
+                                        pixel_array = ds.pixel_array
+                                        # skalowanie obrazu do wymiarów 512x512
+                                        pixel_array = cv2.resize(pixel_array, (512, 512))
+                                        # usuwanie kanałów koloru, pozostawienie tylko kanału zielonego
+                                        if len(pixel_array.shape) > 2:
+                                            pixel_array = pixel_array[:,:,1]
+                                        # Dopasowanie obrazu do jednorodnego kształtu
+                                        pixel_array = pixel_array.reshape((1,) + pixel_array.shape)
 
-                                    image = pixel_array
-                                    #image = cv2.resize(image, (512, 512))
-                                    images.append(image)
-                                    labels.append(int(folder_name))
-                                    num_files += 1
-                                    print(f'[{patient_id}] Wczytano plik {file_name}. (Łącznie: {num_files} plików.)')
-                                except Exception as e:
-                                    print("Error reading file {}: {}".format(file_path, e))
+                                        image = pixel_array
+                                        #image = cv2.resize(image, (512, 512))
+                                        images.append(image)
+                                        labels.append(int(folder_name))
+                                        num_files_per_class += 1
+                                        num_files_per_patient += 1
+                                        print(f'[{patient_id}] Wczytano plik {file_name}. (Łącznie: {num_files_per_class} plików.)')
+                                    except Exception as e:
+                                        print("Error reading file {}: {}".format(file_path, e))
 
         return np.array(images), np.array(labels)
-
-    def read_dicom_imagesOLD(self):
-        """
-        Funkcja odczytuje pliki DICOM z podanego folderu i zwraca je jako tablicę numpy.
-        """
-        print(f'NOWY STATUS: Wczytuję zdjęcia w formacie DICOM...')
-        images = []
-        labels = []
-        filesCounter = 0
-        filesPerFolder = 5000
-
-        startPercent = 0.6
-        endPercent = 0.7
-        quitFlag = False
-        for root, dirs, files in os.walk(self.data_path):
-            if (quitFlag): break
-
-            print(f'Foldery: {dirs}')
-            for dir in dirs:
-                print(f'Wchodzę w folder "{dir}"...')
-                if (quitFlag):
-                    break
-                for subdir,subdirs,subfiles in os.walk(os.path.join(root,dir)):
-                    if (quitFlag):
-                        break
-                    if (len(subfiles) >= 5):
-                        #print(f'Jest {len(subfiles)} zdjęć, a ja biorę tylko od {int(len(subfiles) * startPercent)} do {int(len(subfiles) * endPercent)}')
-                        for subfile in subfiles[int(len(subfiles) * startPercent):int(len(subfiles) * endPercent)]:
-                            if (filesCounter > filesPerFolder):
-                                quitFlag = True
-                                break
-                            if subfile.endswith('.dcm'):
-                                ds = pydicom.dcmread(os.path.join(subdir,subfile))
-                                if not 'PixelData' in ds:
-                                    continue
-
-                                label = re.split("[\\\\/]", str(subdir))[4]
-                                if self.get_id(label) not in ["Dead", "Alive"]:
-                                    continue
-                                else:
-                                    labels.append(0 if self.get_id(label) == "Dead" else 1)
-
-                                    pixel_array = ds.pixel_array
-                                    # skalowanie obrazu do wymiarów 512x512
-                                    pixel_array = cv2.resize(pixel_array, (512, 512))
-                                    # usuwanie kanałów koloru, pozostawienie tylko kanału zielonego
-                                    if len(pixel_array.shape) > 2:
-                                        pixel_array = pixel_array[:,:,1]
-                                    # Dopasowanie obrazu do jednorodnego kształtu
-                                    pixel_array = pixel_array.reshape((1,) + pixel_array.shape)
-
-                                    image = pixel_array
-                                    #image = cv2.resize(image, (512, 512))
-                                    images.append(image)
-
-                                    print(f'[{label}] Wczytano: {filesCounter}/722347 plików ({round((filesCounter/722347) * 100, 2)}%)')
-                                    filesCounter += 1
-                            #break # <-- TYLKO JEDNO ZDJĘCIE
-
-        for image in images:
-            print(image.shape)
-
-        self.number_of_classes = len(np.unique(labels))
-
-        print(f'NOWY STATUS: Wczytywanie zakończono...')
-        return np.array(images),np.array(labels)
 
     def augment_data(self, x_train, y_train):
         """
@@ -153,14 +130,46 @@ class DataPreprocessing:
 
         return data_gen.flow(x_train, y_train, batch_size=32)
 
+class OmicDataPreprocessing:
 
-'''
-DO ZROBIENIA:
-- Skrypt do przebudowania struktury danych wejściowych (wstępne przetwarzanie danych)
+    def __init__(self, path):
+        self.path = path
+        self.X = None
+        self.y = None
+        self.columns = None
 
-- Alive
--- TCA-02-314-2
---- 1.dcm
---- 2.dcm
+    def load_data(self):
+        omic_data = pd.read_csv(self.path, sep=';', decimal=',')
+        self.X = omic_data.drop(columns=["class", "id"])
+        self.y = omic_data["class"]
+        self.columns = self.X.columns
 
-'''
+    def normalize_data(self):
+        scaler = StandardScaler()
+        self.X = scaler.fit_transform(self.X)
+        self.X = pd.DataFrame(self.X, columns=self.columns)
+
+    def feature_selection(self, method=None):
+        if method == 'mrmr':
+            old = self.X.shape[1]
+            selected_features = pymrmr.mRMR(self.X, 'MIQ', 10)
+            self.X = self.X[selected_features]
+            print(f'{old} -> [MRMR] -> {self.X.shape[1]}')
+        elif method == 'relief':
+            old = self.X.shape[1]
+            fs = ReliefF(n_neighbors=10, n_features_to_keep=10)
+            self.X = fs.fit_transform(self.X.values, self.y)
+            self.X = pd.DataFrame(self.X)
+            new = self.X.shape[1]
+            print(f'{old} -> [ReliefF] -> {new}')
+        elif method == 'utest':
+            old = self.X.shape[1]
+            class_0 = self.X[self.y == 0]
+            class_1 = self.X[self.y == 1]
+            p_values = {}
+            for column in self.X.columns:
+                u_statistic, p_value = stats.mannwhitneyu(class_0[column], class_1[column])
+                p_values[column] = p_value
+            selected_features = [column for column, p_value in p_values.items() if p_value < 0.05]
+            self.X = self.X[selected_features]
+            print(f'{old} -> [U-Test] -> {self.X.shape[1]}')

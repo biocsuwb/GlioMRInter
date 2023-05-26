@@ -1,6 +1,6 @@
 from . import *
 
-class ModelBuilding:
+class ImageModelBuilding:
 
     def __init__(self):
         #self.clf_rf = ensemble.RandomForestClassifier()
@@ -95,6 +95,8 @@ class ModelBuilding:
             print(f"  AUC: {auc_scores[-1]:.3f}")
             print(f"  MCC: {mcc_scores[-1]:.3f}")
 
+            #MSE <---
+
         print("Cross-validation summary:")
         print(f"  Accuracy: {np.mean(acc_scores):.3f} ± {np.std(acc_scores):.3f}")
         print(f"  Precision: {np.mean(precision_scores):.3f} ± {np.std(precision_scores):.3f}")
@@ -113,3 +115,51 @@ class ModelBuilding:
 
         with open('./classifierRF.pickle', 'rb') as fileFR:
             loaded_clf = pickle.load(fileFR)
+
+
+class OmicsModelBuilding:
+
+    def __init__(self, X, y, n_splits=5):
+        self.X = X
+        self.y = y
+        self.n_splits = n_splits
+
+    def train_and_evaluate(self):
+        kfold = StratifiedKFold(n_splits=self.n_splits, shuffle=True)
+        model = RandomForestClassifier()  # Używamy teraz RandomForest
+
+        acc_scores = []
+        precision_scores = []
+        recall_scores = []
+        f1_scores = []
+        auc_scores = []
+        mcc_scores = []
+
+        for train_index, test_index in kfold.split(self.X, self.y):
+            X_train, X_test = self.X.iloc[train_index], self.X.iloc[test_index]
+            y_train, y_test = self.y[train_index], self.y[test_index]
+
+            model.fit(X_train, y_train)
+            predictions = model.predict(X_test)
+
+            acc_scores.append(metrics.accuracy_score(y_test, predictions))
+            precision_scores.append(metrics.precision_score(y_test, predictions, zero_division=1))
+            recall_scores.append(metrics.recall_score(y_test, predictions))
+            f1_scores.append(metrics.f1_score(y_test, predictions))
+            auc_scores.append(metrics.roc_auc_score(y_test, predictions))
+            mcc_scores.append(metrics.matthews_corrcoef(y_test, predictions))
+
+            print(f"  Accuracy: {acc_scores[-1]:.3f}")
+            print(f"  Precision: {precision_scores[-1]:.3f}")
+            print(f"  Recall: {recall_scores[-1]:.3f}")
+            print(f"  F1: {f1_scores[-1]:.3f}")
+            print(f"  AUC: {auc_scores[-1]:.3f}")
+            print(f"  MCC: {mcc_scores[-1]:.3f}")
+
+        print("Cross-validation summary:")
+        print(f"  Accuracy: {np.mean(acc_scores):.3f} ± {np.std(acc_scores):.3f}")
+        print(f"  Precision: {np.mean(precision_scores):.3f} ± {np.std(precision_scores):.3f}")
+        print(f"  Recall: {np.mean(recall_scores):.3f} ± {np.std(recall_scores):.3f}")
+        print(f"  F1: {np.mean(f1_scores):.3f} ± {np.std(f1_scores):.3f}")
+        print(f"  AUC: {np.mean(auc_scores):.3f} ± {np.std(auc_scores):.3f}")
+        print(f"  MCC: {np.mean(mcc_scores):.3f} ± {np.std(mcc_scores):.3f}")
