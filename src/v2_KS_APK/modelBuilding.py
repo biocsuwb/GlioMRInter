@@ -1,165 +1,124 @@
 from . import *
 
-class ImageModelBuilding:
+class ModelBuilder:
+    def __init__(self, filepath, X, y, n_splits=5):
+        # Load data
+        self.df = pd.read_excel(filepath)
+        self.X = X
+        self.y = y
 
-    def __init__(self):
-        #self.clf_rf = ensemble.RandomForestClassifier()
-        pass
+        # Convert Class column to 0 (Dead) and 1 (Alive)
+        self.df['Class'] = self.df['Class'].map({'Dead': 0, 'Alive': 1})
+
+        # StratifiedKFold
+        self.skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+
+        # Initialize placeholder for training and testing indices
+        self.train_indices = []
+        self.test_indices = []
+
+        self.cross_validate()
+
+    def cross_validate(self):
+        #self.X = self.df.drop(['Class', 'ID'], axis=1)
+        #self.y = self.df['Class']
+
+        # Perform stratified cross-validation and store split indices
+        for train_index, test_index in self.skf.split(self.X, self.y):
+            self.train_indices.append(train_index)
+            self.test_indices.append(test_index)
+
+            #print("Train indices:", train_index)
+            #print("Test indices:", test_index)
+
+    def train_and_evaluate(self, model, metrics_list=['accuracy']):
+        # Define dictionary of scoring metrics
+        score_funcs = {
+            'accuracy': metrics.accuracy_score,
+            'precision': metrics.precision_score,
+            'recall': metrics.recall_score,
+            'f1_score': metrics.f1_score,
+            'roc_auc_score': metrics.roc_auc_score
+        }
+
+        # Initialize dictionary for scores
+        scores = {metric: [] for metric in metrics_list}
+
+        for train_index, test_index in zip(self.train_indices, self.test_indices):
+            #print("Train indices:", train_index)
+            #print("Test indices:", test_index)
+
+            # Split the data
+            X_train, X_test = self.X.iloc[train_index], self.X.iloc[test_index]
+            y_train, y_test = self.y.iloc[train_index], self.y.iloc[test_index]
+
+            #print("X_train:")
+            #print(X_train)
+            #print("y_train:")
+            #print(y_train)
+
+            # Fit the model
+            model.fit(X_train, y_train)
+
+            # Make predictions
+            y_pred = model.predict(X_test)
+
+            # Evaluate the model and store scores
+            for metric in metrics_list:
+                score_func = score_funcs[metric]
+                score = score_func(y_test, y_pred, zero_division=1) if metric in ["precision", "recall", "f1_score"] else score_func(y_test, y_pred)
+                print(f'Score {score}')
+                scores[metric].append(score)
+
+        # Print out the average scores over the folds
+        for metric, values in scores.items():
+            avg_score = sum(values) / len(values)
+            print(f'Average {metric}: {avg_score}')
+
+        # Return the scores for all folds
+        return scores
+
+class ImageModelBuilding(ModelBuilder):
+    def __init__(self, X, y, n_splits=5):
+        super().__init__(X, y, n_splits)
 
     def build_model(self, number_of_classes):
         """
         Funkcja buduje model sieci konwolucyjnej
         """
         print(f'NOWY STATUS: Buduję model sieci...')
-        model = tf.keras.models.Sequential([
-          tf.keras.layers.Conv2D(16, (3,3), activation='relu',
-                      input_shape=(512, 512, 1)),
-          tf.keras.layers.MaxPooling2D(2, 2),
-          tf.keras.layers.Conv2D(32, (3,3), activation='relu'),
-          tf.keras.layers.MaxPooling2D(2,2),
-          tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
-          tf.keras.layers.MaxPooling2D(2,2),
-          tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
-          tf.keras.layers.MaxPooling2D(2,2),
-          tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
-          tf.keras.layers.MaxPooling2D(2,2),
-          tf.keras.layers.Flatten(),
-          tf.keras.layers.Dense(512, activation='relu'),
-          tf.keras.layers.Dense(1, activation='sigmoid')
+        model = Sequential([
+            Conv2D(16, (3,3), activation='relu', input_shape=(512, 512, 1)),
+            MaxPooling2D(2, 2),
+            Conv2D(32, (3,3), activation='relu'),
+            MaxPooling2D(2,2),
+            Conv2D(64, (3,3), activation='relu'),
+            MaxPooling2D(2,2),
+            Conv2D(64, (3,3), activation='relu'),
+            MaxPooling2D(2,2),
+            Conv2D(64, (3,3), activation='relu'),
+            MaxPooling2D(2,2),
+            Flatten(),
+            Dense(512, activation='relu'),
+            Dense(1, activation='sigmoid')
         ])
-
-        model.summary()
 
         model.compile(optimizer=RMSprop(lr=0.001),
                       loss='binary_crossentropy',
-                     metrics=['accuracy'])
-
-                     #, 'precision', 'recall', 'f1_score', 'auc', 'MCC'
-                     #tf.keras.metrics.Accuracy(), tf.keras.metrics.AUC(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall()
-
-        '''
-        - Accuracy: procent poprawnych predykcji względem całkowitej liczby próbek.
-        - Binary accuracy: procent poprawnych predykcji w przypadku zadania binarnej klasyfikacji.
-        - Precision: stosunek liczby poprawnie sklasyfikowanych pozytywnych przykładów do wszystkich pozytywnych predykcji.
-        - Recall: stosunek liczby poprawnie sklasyfikowanych pozytywnych przykładów do wszystkich faktycznie pozytywnych przykładów w zbiorze.
-        - F1 score: średnia harmoniczna precyzji i recall.
-        - AUC: pole pod krzywą ROC (Receiver Operating Characteristic), której osią x jest false positive rate (FPR), a osią y jest true positive rate (TPR). AUC daje nam informację o tym, jak dobrze model radzi sobie w rozróżnianiu klas.
-        '''
-
+                      metrics=['accuracy'])
 
         return model
 
-    def cross_validation(self, X, y, model, data, n_splits=3, test_size=0.3):
-
-        newX = np.concatenate(X, axis=0)
-
-        sss = model_selection.StratifiedShuffleSplit(n_splits=n_splits, test_size=test_size)
-        splits = sss.split(newX, y)
-
-        acc_scores = []
-        precision_scores = []
-        recall_scores = []
-        f1_scores = []
-        auc_scores = []
-        mcc_scores = []
-
-        for i, (train_id, test_id) in enumerate(splits):
-            print(f"Fold {i}:")
-            print(f"  Train: index={train_id}")
-            print(f"  Test:  index={test_id}")
-
-            X_train = newX[train_id]
-            X_test = newX[test_id]
-            y_train = y[train_id]
-            y_test = y[test_id]
-
-            augmented_data = data.augment_data(X_train, y_train)
-
-            print(f'NOWY STATUS: Trenuję dane...')
-            model.fit(augmented_data, epochs=10)
-
-            y_pred = model.predict(X_test)
-            y_pred = np.round(y_pred)
-
-            acc_scores.append(metrics.accuracy_score(y_test, y_pred))
-            precision_scores.append(metrics.precision_score(y_test, y_pred))
-            recall_scores.append(metrics.recall_score(y_test, y_pred))
-            f1_scores.append(metrics.f1_score(y_test, y_pred))
-            auc_scores.append(metrics.roc_auc_score(y_test, y_pred))
-            mcc_scores.append(metrics.matthews_corrcoef(y_test, y_pred))
-
-            print(f"  Accuracy: {acc_scores[-1]:.3f}")
-            print(f"  Precision: {precision_scores[-1]:.3f}")
-            print(f"  Recall: {recall_scores[-1]:.3f}")
-            print(f"  F1: {f1_scores[-1]:.3f}")
-            print(f"  AUC: {auc_scores[-1]:.3f}")
-            print(f"  MCC: {mcc_scores[-1]:.3f}")
-
-            #MSE <---
-
-        print("Cross-validation summary:")
-        print(f"  Accuracy: {np.mean(acc_scores):.3f} ± {np.std(acc_scores):.3f}")
-        print(f"  Precision: {np.mean(precision_scores):.3f} ± {np.std(precision_scores):.3f}")
-        print(f"  Recall: {np.mean(recall_scores):.3f} ± {np.std(recall_scores):.3f}")
-        print(f"  F1: {np.mean(f1_scores):.3f} ± {np.std(f1_scores):.3f}")
-        print(f"  AUC: {np.mean(auc_scores):.3f} ± {np.std(auc_scores):.3f}")
-        print(f"  MCC: {np.mean(mcc_scores):.3f} ± {np.std(mcc_scores):.3f}")
+    def train_and_evaluate(self):
+        model = self.build_model()
+        super().train_and_evaluate(model, ['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score'])
 
 
-    def model_write(self):
 
-        with open('./classifierRF.pickle', 'wb') as fileFR:
-            pickle.dump(self.clf_rf, fileFR)
-
-    def model_read(self):
-
-        with open('./classifierRF.pickle', 'rb') as fileFR:
-            loaded_clf = pickle.load(fileFR)
-
-
-class OmicsModelBuilding:
-
-    def __init__(self, X, y, n_splits=5):
-        self.X = X
-        self.y = y
-        self.n_splits = n_splits
+class OmicsModelBuilding(ModelBuilder):
+    def __init__(self, filepath, X, y, n_splits=3):
+        super().__init__(filepath, X, y, n_splits)
 
     def train_and_evaluate(self):
-        kfold = StratifiedKFold(n_splits=self.n_splits, shuffle=True)
         model = RandomForestClassifier()
-
-        acc_scores = []
-        precision_scores = []
-        recall_scores = []
-        f1_scores = []
-        auc_scores = []
-        mcc_scores = []
-
-        for train_index, test_index in kfold.split(self.X, self.y):
-            X_train, X_test = self.X.iloc[train_index], self.X.iloc[test_index]
-            y_train, y_test = self.y[train_index], self.y[test_index]
-
-            model.fit(X_train, y_train)
-            predictions = model.predict(X_test)
-
-            acc_scores.append(metrics.accuracy_score(y_test, predictions))
-            precision_scores.append(metrics.precision_score(y_test, predictions, zero_division=1))
-            recall_scores.append(metrics.recall_score(y_test, predictions))
-            f1_scores.append(metrics.f1_score(y_test, predictions))
-            auc_scores.append(metrics.roc_auc_score(y_test, predictions))
-            mcc_scores.append(metrics.matthews_corrcoef(y_test, predictions))
-
-            print(f"  Accuracy: {acc_scores[-1]:.3f}")
-            print(f"  Precision: {precision_scores[-1]:.3f}")
-            print(f"  Recall: {recall_scores[-1]:.3f}")
-            print(f"  F1: {f1_scores[-1]:.3f}")
-            print(f"  AUC: {auc_scores[-1]:.3f}")
-            print(f"  MCC: {mcc_scores[-1]:.3f}")
-
-        print("Cross-validation summary:")
-        print(f"  Accuracy: {np.mean(acc_scores):.3f} ± {np.std(acc_scores):.3f}")
-        print(f"  Precision: {np.mean(precision_scores):.3f} ± {np.std(precision_scores):.3f}")
-        print(f"  Recall: {np.mean(recall_scores):.3f} ± {np.std(recall_scores):.3f}")
-        print(f"  F1: {np.mean(f1_scores):.3f} ± {np.std(f1_scores):.3f}")
-        print(f"  AUC: {np.mean(auc_scores):.3f} ± {np.std(auc_scores):.3f}")
-        print(f"  MCC: {np.mean(mcc_scores):.3f} ± {np.std(mcc_scores):.3f}")
+        super().train_and_evaluate(model, ['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score'])

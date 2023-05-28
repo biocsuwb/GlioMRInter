@@ -134,6 +134,7 @@ class OmicDataPreprocessing:
 
     def __init__(self, path):
         self.path = path
+        self.ID = None
         self.X = None
         self.y = None
         self.columns = None
@@ -142,6 +143,7 @@ class OmicDataPreprocessing:
         omic_data = pd.read_csv(self.path, sep=';', decimal=',')
         self.X = omic_data.drop(columns=["class", "id"])
         self.y = omic_data["class"]
+        self.ID = omic_data["id"]  # Store ID as attribute
         self.columns = self.X.columns
 
     def normalize_data(self):
@@ -149,19 +151,35 @@ class OmicDataPreprocessing:
         self.X = scaler.fit_transform(self.X)
         self.X = pd.DataFrame(self.X, columns=self.columns)
 
-    def feature_selection(self, method=None, n_features=100):
+    def remove_redundant_features(self, correlation_threshold=0.9):
+        corr_matrix = self.X.corr().abs()
+        upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+        to_drop = [column for column in upper.columns if any(upper[column] > correlation_threshold)]
+        self.X = self.X.drop(columns=to_drop)  # Drop redundant features
+
+    def feature_selection(self, method=None, n_features=100, correlation_threshold=0.9):
         if method == 'mrmr':
             old = self.X.shape[1]
-            selected_features = pymrmr.mRMR(self.X, 'MIQ', n_features) #zrobić opcjonalnie
+            selected_features = pymrmr.mRMR(self.X, 'MIQ', n_features)
             self.X = self.X[selected_features]
+            self.remove_redundant_features(correlation_threshold)
             print(f'{old} -> [MRMR] -> {self.X.shape[1]}')
+
         elif method == 'relief':
             old = self.X.shape[1]
             fs = ReliefF(n_neighbors=10, n_features_to_keep=n_features)
-            self.X = fs.fit_transform(self.X.values, self.y)
-            self.X = pd.DataFrame(self.X)
-            new = self.X.shape[1]
-            print(f'{old} -> [ReliefF] -> {new}')
+            #print("Before fit_transform in ReliefF, data type is:", type(self.X))
+            #print("First few rows of data:", self.X.head())
+            #print("Data contains non-numeric values:", self.X.isnull().any().any())
+            X_numpy = self.X.values
+            transformed_X = fs.fit_transform(X_numpy, self.y)
+            feature_scores = fs.feature_scores
+            sorted_indices = np.argsort(feature_scores)[::-1]
+            selected_feature_names = self.X.columns[sorted_indices[:n_features]]
+            self.X = pd.DataFrame(transformed_X, columns=selected_feature_names)
+            self.remove_redundant_features(correlation_threshold)
+            print(f'{old} -> [ReliefF] -> {self.X.shape[1]}')
+
         elif method == 'utest':
             old = self.X.shape[1]
             class_0 = self.X[self.y == 0]
@@ -170,8 +188,8 @@ class OmicDataPreprocessing:
             for column in self.X.columns:
                 u_statistic, p_value = stats.mannwhitneyu(class_0[column], class_1[column])
                 p_values[column] = p_value
-            selected_features = [column for column, p_value in p_values.items() if p_value < 0.05]
-            #poprawka na wielotesty, Holm, FDR <--
-            # usuwanie redundatnych cech, parametr corr
+            _, p_value_adjusted, _, _ = multipletests(list(p_values.values()), method='fdr_bh')
+            selected_features = [column for column, adjusted_p_value in zip(p_values.keys(), p_value_adjusted) if adjusted_p_value < 0.05]
             self.X = self.X[selected_features]
+            self.remove_redundant_features(correlation_threshold)
             print(f'{old} -> [U-Test] -> {self.X.shape[1]}')

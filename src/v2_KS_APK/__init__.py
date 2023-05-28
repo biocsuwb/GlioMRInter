@@ -8,7 +8,7 @@ import pymrmr
 import pandas as pd
 from ReliefF import ReliefF
 import scipy.stats as stats
-import sklearn.metrics as metrics
+from sklearn import metrics
 import tensorflow as tf
 import tensorflow_io as tfio
 from keras import models, layers
@@ -21,6 +21,7 @@ from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.optimizers import RMSprop
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split, StratifiedKFold
+from statsmodels.stats.multitest import multipletests
 
 
 '''

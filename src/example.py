@@ -17,16 +17,16 @@ modelBuilder.cross_validation(data.X, data.y, model, data)
 preprocessor = dp.OmicDataPreprocessing(path='df.CNV.merge.image.LGG.csv')
 preprocessor.load_data()
 preprocessor.normalize_data()
-preprocessor.feature_selection(method="mrmr", n_features=100)
+preprocessor.feature_selection(method="utest", n_features=100)
 
 # Trenowanie i ocena modelu
-trainer = mb.OmicsModelBuilding(preprocessor.X, preprocessor.y)
+trainer = mb.OmicsModelBuilding("E:/Magisterka/AllIDs.xlsx", preprocessor.X, preprocessor.y)
 trainer.train_and_evaluate()
 
 
 '''
-Kroswalidacja na początku
-Poprawić omiczne, zmienić nazwę
+Kroswalidacja na początku VVV
+Poprawić omiczne, zmienić nazwę VVV
 Sprawdzić na danych z artykułu
 Dopiero puścić na glejaku
 
