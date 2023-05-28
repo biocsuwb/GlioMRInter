@@ -149,15 +149,15 @@ class OmicDataPreprocessing:
         self.X = scaler.fit_transform(self.X)
         self.X = pd.DataFrame(self.X, columns=self.columns)
 
-    def feature_selection(self, method=None):
+    def feature_selection(self, method=None, n_features=100):
         if method == 'mrmr':
             old = self.X.shape[1]
-            selected_features = pymrmr.mRMR(self.X, 'MIQ', 10)
+            selected_features = pymrmr.mRMR(self.X, 'MIQ', n_features) #zrobić opcjonalnie
             self.X = self.X[selected_features]
             print(f'{old} -> [MRMR] -> {self.X.shape[1]}')
         elif method == 'relief':
             old = self.X.shape[1]
-            fs = ReliefF(n_neighbors=10, n_features_to_keep=10)
+            fs = ReliefF(n_neighbors=10, n_features_to_keep=n_features)
             self.X = fs.fit_transform(self.X.values, self.y)
             self.X = pd.DataFrame(self.X)
             new = self.X.shape[1]
@@ -171,5 +171,7 @@ class OmicDataPreprocessing:
                 u_statistic, p_value = stats.mannwhitneyu(class_0[column], class_1[column])
                 p_values[column] = p_value
             selected_features = [column for column, p_value in p_values.items() if p_value < 0.05]
+            #poprawka na wielotesty, Holm, FDR <--
+            # usuwanie redundatnych cech, parametr corr
             self.X = self.X[selected_features]
             print(f'{old} -> [U-Test] -> {self.X.shape[1]}')

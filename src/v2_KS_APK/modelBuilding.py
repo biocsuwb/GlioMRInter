@@ -126,7 +126,7 @@ class OmicsModelBuilding:
 
     def train_and_evaluate(self):
         kfold = StratifiedKFold(n_splits=self.n_splits, shuffle=True)
-        model = RandomForestClassifier()  # Używamy teraz RandomForest
+        model = RandomForestClassifier()
 
         acc_scores = []
         precision_scores = []
