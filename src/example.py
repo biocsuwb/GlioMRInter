@@ -25,11 +25,15 @@ trainer.train_and_evaluate()
 
 
 '''
-Kroswalidacja na początku VVV
-Poprawić omiczne, zmienić nazwę VVV
+Kroswalidacja na poczatku VVV
+Poprawic omiczne, zmienic nazwe VVV
 Sprawdzić na danych z artykułu
 Dopiero puścić na glejaku
 
 Dodać liczenie czasu
 Moduł do wizualizacji wyników (wykresy skuteczności w zależności od liczby cech, w zależności od selekcji)
+
+===
+Zapisywanie do pickle w milestoneach
+Zapisywać do CSV wyniki
 '''

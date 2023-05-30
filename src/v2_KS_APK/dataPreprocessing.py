@@ -151,13 +151,13 @@ class OmicDataPreprocessing:
         self.X = scaler.fit_transform(self.X)
         self.X = pd.DataFrame(self.X, columns=self.columns)
 
-    def remove_redundant_features(self, correlation_threshold=0.9):
+    def remove_redundant_features(self, correlation_threshold=0.75):
         corr_matrix = self.X.corr().abs()
         upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
         to_drop = [column for column in upper.columns if any(upper[column] > correlation_threshold)]
         self.X = self.X.drop(columns=to_drop)  # Drop redundant features
 
-    def feature_selection(self, method=None, n_features=100, correlation_threshold=0.9):
+    def feature_selection(self, method=None, n_features=100, correlation_threshold=0.75):
         if method == 'mrmr':
             old = self.X.shape[1]
             selected_features = pymrmr.mRMR(self.X, 'MIQ', n_features)
