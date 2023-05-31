@@ -1,6 +1,7 @@
 import os
 import re
 import cv2
+import time
 import pickle
 import pydicom
 import numpy as np

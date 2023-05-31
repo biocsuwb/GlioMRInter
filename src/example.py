@@ -1,5 +1,6 @@
 from v2_KS_APK import dataPreprocessing as dp
 from v2_KS_APK import modelBuilding as mb
+import time
 
 '''
 data = dp.ImageDataPreprocessing()
@@ -14,14 +15,20 @@ modelBuilder.cross_validation(data.X, data.y, model, data)
 '''
 
 # Przygotowanie danych
-preprocessor = dp.OmicDataPreprocessing(path='df.CNV.merge.image.LGG.csv')
+preparingTimeStart = time.time()
+preprocessor = dp.OmicDataPreprocessing(path='data_train_RNA_integ_5typeDat.csv')
 preprocessor.load_data()
 preprocessor.normalize_data()
-preprocessor.feature_selection(method="utest", n_features=100)
+preprocessor.feature_selection(method="mrmr", n_features=100)
+preparingTime = time.time() - preparingTimeStart
 
 # Trenowanie i ocena modelu
+modelBuildingTimeStart = time.time()
 trainer = mb.OmicsModelBuilding("E:/Magisterka/AllIDs.xlsx", preprocessor.X, preprocessor.y)
 trainer.train_and_evaluate()
+modelBuildingTime = time.time() - modelBuildingTimeStart
+
+print(f'Czas przygotowywania danych: {preparingTime} \nCzas budowania modelu: {modelBuildingTime}')
 
 
 '''
