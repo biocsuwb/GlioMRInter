@@ -43,4 +43,10 @@ Moduł do wizualizacji wyników (wykresy skuteczności w zależności od liczby 
 ===
 Zapisywanie do pickle w milestoneach
 Zapisywać do CSV wyniki
+
+====
+
+MDFS1D <-- dodać zamiast MRMR!!!
+fast correlation based filter FCBF <-- !!!
+model zintegrowany!!!
 '''
