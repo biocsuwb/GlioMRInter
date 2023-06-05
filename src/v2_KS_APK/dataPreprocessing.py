@@ -194,3 +194,20 @@ class OmicDataPreprocessing:
             self.X = self.X[selected_features]
             self.remove_redundant_features(correlation_threshold)
             print(f'{old} -> [U-Test] -> {self.X.shape[1]}')
+
+        elif method == 'fcbf':
+            old = self.X.shape[1]
+
+            # Obliczanie współczynnika korelacji FCBF
+            idx = FCBF.fcbf(self.X.values, self.y.values)
+
+            # Wybór cech
+            selected_features = self.X.columns[idx[0]]
+
+            # Aktualizacja X do tylko wybranych cech
+            self.X = self.X[selected_features]
+
+            # Usunięcie nadmiarowych cech
+            self.remove_redundant_features(correlation_threshold)
+
+            print(f'{old} -> [FCBF] -> {self.X.shape[1]}')

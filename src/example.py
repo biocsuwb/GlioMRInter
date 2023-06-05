@@ -16,10 +16,10 @@ modelBuilder.cross_validation(data.X, data.y, model, data)
 
 # Przygotowanie danych
 preparingTimeStart = time.time()
-preprocessor = dp.OmicDataPreprocessing(path='data_train_RNA_integ_5typeDat.csv')
+preprocessor = dp.OmicDataPreprocessing(path='data/RNA.csv')
 preprocessor.load_data()
 preprocessor.normalize_data()
-preprocessor.feature_selection(method="mrmr", n_features=100)
+preprocessor.feature_selection(method="relief", n_features=100)
 preparingTime = time.time() - preparingTimeStart
 
 # Trenowanie i ocena modelu

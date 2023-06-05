@@ -23,6 +23,7 @@ from tensorflow.keras.optimizers import RMSprop
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from statsmodels.stats.multitest import multipletests
+from skfeature.function.information_theoretical_based import FCBF
 
 
 '''

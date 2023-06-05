@@ -1,3 +1,7 @@
 tcgaGD_data_Meth.Rds
 tcgaGDC_data_CNV_genelevel.Rds
 tcgaGDC_data_GE_counts.Rds
+CNA.csv
+RNA.csv
+METH.csv
+RPPA.csv
