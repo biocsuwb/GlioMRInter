@@ -8,6 +8,7 @@ class ModelBuilder:
         self.df = pd.read_excel(filepath)
         self.X = X
         self.y = y
+        self.probabilities = []
 
         if(self.modelName != None): print(f'=== BUILDING MODEL: {self.modelName} ===')
         if(self.X.shape[1] <= 0):
@@ -58,8 +59,7 @@ class ModelBuilder:
 
         # Initialize dictionary for scores
         scores = {metric: [] for metric in metrics_list}
-
-        probabilities = []
+        self.probabilities = []
 
         for train_index, test_index in zip(self.train_indices, self.test_indices):
             #print("Train indices:", train_index)
@@ -88,8 +88,8 @@ class ModelBuilder:
                 scores[metric].append(score)
 
             if(return_probabilities):
-                print("dodaję...", model.predict_proba(X_test))
-                probabilities.append(model.predict_proba(X_test))
+                proba = [p[0] for p in model.predict_proba(X_test)]
+                self.probabilities.append(proba)
 
         # Print out the average scores over the folds
         for metric, values in scores.items():
@@ -97,11 +97,6 @@ class ModelBuilder:
             avg_score = sum(values) / len(values)
             print(f'Average {metric}: {avg_score}')
 
-        if(return_probabilities):
-            print("zwracam...")
-            #print(f'PROBABILITIES:')
-            #print(probabilities)
-            return probabilities
         else:
             # Return the scores for all folds
             return scores

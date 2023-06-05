@@ -2,6 +2,7 @@ from v2_KS_APK import dataPreprocessing as dp
 from v2_KS_APK import modelBuilding as mb
 import time
 import pandas as pd
+import numpy as np
 
 '''
 data = dp.ImageDataPreprocessing()
@@ -59,39 +60,38 @@ probabilities = True
 trainer_CNA_timeStart = time.time()
 trainer_CNA = mb.OmicsModelBuilding(id_path, data_CNA.X, data_CNA.y, modelName="CNA")
 trainer_CNA.cross_validate()
-trainer_CNA_prob = trainer_CNA.train_and_evaluate(return_probabilities=probabilities)
+trainer_CNA.train_and_evaluate(return_probabilities=probabilities)
 trainer_CNA_timeStop = time.time()
 trainer_CNA_time = trainer_CNA_timeStop - trainer_CNA_timeStart
 
 trainer_METH_timeStart = time.time()
 trainer_METH = mb.OmicsModelBuilding(id_path, data_METH.X, data_METH.y, modelName="METH", train_indices=trainer_CNA.train_indices, test_indices=trainer_CNA.test_indices)
-trainer_METH_prob = trainer_METH.train_and_evaluate(return_probabilities=probabilities)
+trainer_METH.train_and_evaluate(return_probabilities=probabilities)
 trainer_METH_timeStop = time.time()
 trainer_METH_time = trainer_METH_timeStop - trainer_METH_timeStart
 
 trainer_RNA_timeStart = time.time()
 trainer_RNA = mb.OmicsModelBuilding(id_path, data_RNA.X, data_RNA.y, modelName="RNA", train_indices=trainer_CNA.train_indices, test_indices=trainer_CNA.test_indices)
-trainer_RNA_prob = trainer_RNA.train_and_evaluate(return_probabilities=probabilities)
+trainer_RNA.train_and_evaluate(return_probabilities=probabilities)
 trainer_RNA_timeStop = time.time()
 trainer_RNA_time = trainer_RNA_timeStop - trainer_RNA_timeStart
 
 trainer_RPPA_timeStart = time.time()
 trainer_RPPA = mb.OmicsModelBuilding(id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA", train_indices=trainer_CNA.train_indices, test_indices=trainer_CNA.test_indices)
-trainer_RPPA_prob = trainer_RPPA.train_and_evaluate(return_probabilities=probabilities)
-trainer_RPPA_prob = trainer_RPPA_timeStop = time.time()
+trainer_RPPA.train_and_evaluate(return_probabilities=probabilities)
+trainer_RPPA_timeStop = trainer_RPPA_timeStop = time.time()
 trainer_RPPA_time = trainer_RPPA_timeStop - trainer_RPPA_timeStart
 
 # utworzenie nowego DataFrame
 probabilities_df = pd.DataFrame()
 
-print(trainer_CNA_prob)
-print([p[0] for p in trainer_CNA_prob])
+print("PA TERA", np.concatenate(trainer_CNA.probabilities).flatten())
 
 # dodajemy kolumny prawdopodobieństw dla każdego z modeli
-probabilities_df['CNA_prob'] = trainer_CNA_prob
-probabilities_df['METH_prob'] = trainer_METH_prob
-probabilities_df['RNA_prob'] = trainer_RNA_prob
-probabilities_df['RPPA_prob'] = trainer_RPPA_prob
+probabilities_df['CNA_prob'] = np.concatenate(trainer_CNA.probabilities).flatten()
+probabilities_df['METH_prob'] = np.concatenate(trainer_METH.probabilities).flatten()
+probabilities_df['RNA_prob'] = np.concatenate(trainer_RNA.probabilities).flatten()
+probabilities_df['RPPA_prob'] = np.concatenate(trainer_RPPA.probabilities).flatten()
 
 # dodajemy identyfikatory pacjentów jako indeks DataFrame
 probabilities_df.reset_index(drop=True, inplace=True)#probabilities_df.set_index(data_CNA.df.index, inplace=True)  # zakładamy, że data_CNA.df.index zawiera identyfikatory pacjentów
