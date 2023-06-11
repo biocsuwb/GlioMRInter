@@ -24,6 +24,8 @@ from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from statsmodels.stats.multitest import multipletests
 from skfeature.function.information_theoretical_based import FCBF
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 '''
@@ -57,4 +59,9 @@ Z każdych danych tabela, póxniej wybierzemy przypadki
 
 Zmienna decyzyjna jak coś w tcgaGD_data_clin.Rds
 
+W RPPA brakuje indeksów!
+
+
+
+    ValueError: Only one class present in y_true. ROC AUC score is not defined in that case
 '''

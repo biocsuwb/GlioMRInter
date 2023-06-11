@@ -132,17 +132,21 @@ class ImageDataPreprocessing:
 
 class OmicDataPreprocessing:
 
-    def __init__(self, path):
+    def __init__(self, path=None, df=None):
         self.path = path
+        self.df = df
         self.ID = None
         self.X = None
         self.y = None
         self.columns = None
 
-    def load_data(self):
-        omic_data = pd.read_csv(self.path, sep=',', decimal='.')
+    def load_data(self, csv=True):
+        omic_data = pd.read_csv(self.path, sep=',', decimal='.') if(self.path != None) else self.df
         #print(omic_data.columns[0][:10])
-        self.X = omic_data.drop(columns=["class"]) #self.X = omic_data.drop(columns=["class", "id"])
+        if 'id' in omic_data.columns:
+            self.X = omic_data.drop(columns=["class", "id"])
+        else:
+            self.X = omic_data.drop(columns=["class"])
         self.y = omic_data["class"]
         #self.ID = omic_data["id"]  # Store ID as attribute
         self.columns = self.X.columns

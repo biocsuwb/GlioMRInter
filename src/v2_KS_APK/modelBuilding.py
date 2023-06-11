@@ -10,8 +10,13 @@ class ModelBuilder:
         self.y = y
         self.probabilities = []
 
+        #STATS
+        self.n_splits = n_splits
+        self.features = self.X.shape[1]
+        self.scores = None
+
         if(self.modelName != None): print(f'=== BUILDING MODEL: {self.modelName} ===')
-        if(self.X.shape[1] <= 0):
+        if(self.features <= 0):
             print(f'Error -> Model unable to build')
             self.skip = True
             return
@@ -30,6 +35,18 @@ class ModelBuilder:
             self.train_indices = train_indices
             self.test_indices = test_indices
 
+
+
+
+    def pickle_save(self):
+        with open(f'{self.modelName}.pkl', 'wb') as file:
+            pickle.dump(self, file)
+
+    @staticmethod
+    def pickle_load(modelName):
+        with open(f'{modelName}.pkl', 'rb') as file:
+            return pickle.load(file)
+
     def cross_validate(self):
         #self.X = self.df.drop(['Class', 'ID'], axis=1)
         #self.y = self.df['Class']
@@ -41,8 +58,8 @@ class ModelBuilder:
             self.train_indices.append(train_index)
             self.test_indices.append(test_index)
 
-        print("Train indices:", train_index)
-        print("Test indices:", test_index)
+        print("Train indices:", self.train_indices)
+        print("Test indices:", self.test_indices)
 
     def train_and_evaluate(self, model, metrics_list=['accuracy'], return_probabilities=False):
 
@@ -54,16 +71,33 @@ class ModelBuilder:
             'precision': metrics.precision_score,
             'recall': metrics.recall_score,
             'f1_score': metrics.f1_score,
-            'roc_auc_score': metrics.roc_auc_score
+            'roc_auc_score': metrics.roc_auc_score,
+            'mcc': metrics.matthews_corrcoef
         }
 
         # Initialize dictionary for scores
-        scores = {metric: [] for metric in metrics_list}
+        self.scores = {metric: [] for metric in metrics_list}
         self.probabilities = []
+        self.decisions = []  # nowy atrybut przechowujący decyzje
 
         for train_index, test_index in zip(self.train_indices, self.test_indices):
             #print("Train indices:", train_index)
             #print("Test indices:", test_index)
+
+            self.X.reset_index(drop=True, inplace=True)
+
+            print("Shape of X:", self.X.shape)
+            print("Max train_index:", max(train_index))
+            print("Max test_index:", max(test_index))
+
+            print("Indeksy X:")
+            print(self.X.index)
+
+            print("train_index:")
+            print(train_index)
+
+            print("test_index:")
+            print(test_index)
 
             # Split the data
             X_train, X_test = self.X.iloc[train_index], self.X.iloc[test_index]
@@ -73,6 +107,8 @@ class ModelBuilder:
             #print(X_train)
             #print("y_train:")
             #print(y_train)
+
+
 
             # Fit the model
             model.fit(X_train, y_train)
@@ -85,21 +121,23 @@ class ModelBuilder:
                 score_func = score_funcs[metric]
                 score = score_func(y_test, y_pred, zero_division=1) if metric in ["precision", "recall", "f1_score"] else score_func(y_test, y_pred)
                 #print(f'{metric} score: {score}')  # Add this print statement
-                scores[metric].append(score)
+                self.scores[metric].append(score)
 
             if(return_probabilities):
                 proba = [p[0] for p in model.predict_proba(X_test)]
                 self.probabilities.append(proba)
+                print(proba)
+                self.decisions.append(y_pred)
 
         # Print out the average scores over the folds
-        for metric, values in scores.items():
+        for metric, values in self.scores.items():
             #print(f'{metric} values: {values}')  # Add this print statement
             avg_score = sum(values) / len(values)
             print(f'Average {metric}: {avg_score}')
 
         else:
             # Return the scores for all folds
-            return scores
+            return self.scores
 
 
 class ImageModelBuilding(ModelBuilder):
@@ -145,4 +183,4 @@ class OmicsModelBuilding(ModelBuilder):
 
     def train_and_evaluate(self, return_probabilities=False):
         model = RandomForestClassifier()
-        super().train_and_evaluate(model, ['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score'], return_probabilities=return_probabilities)
+        super().train_and_evaluate(model, ['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score', 'mcc'], return_probabilities=return_probabilities)

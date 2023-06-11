@@ -5,3 +5,7 @@ CNA.csv
 RNA.csv
 METH.csv
 RPPA.csv
+df.CNV.merge.image.LGG.csv
+df.METH.merge.image.LGG.csv
+df.RNA.merge.image.LGG.csv
+df.RPPA.merge.image.LGG.csv
