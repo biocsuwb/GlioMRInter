@@ -24,7 +24,7 @@ class DataVisualizer:
             if model.scores is not None:
                 for metric in ['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score', 'mcc']:
                     for score in model.scores[metric]:  # Iteracja przez każdą wartość score zamiast obliczania średniej
-                        data.append({
+                        boxplot_data.append({
                             'Model Name': f'{model.modelName} ({model.n_splits} splits, {model.features} features)',
                             'Metric': metric,
                             'Score': score
@@ -47,16 +47,25 @@ class DataVisualizer:
     def boxplot(self, metric):
         df_metric = self.df[self.df['Metric'] == metric]
         plt.figure(figsize=(15, 8))
-        sns.boxplot(x="Model Name", y="Score", data=model.scores[metric])
+        sns.boxplot(x='Model Name', y="Score", data=self.boxplot_df)
         plt.title(f'Boxplot of {metric}')
         plt.ylabel('Score')
         plt.xlabel('Model')
         plt.show()
 
+
     def venn_plot(self):
-        feature_sets = [set(model.features) for model in self.model_list]
-        venn3(feature_sets, ('Model 1', 'Model 2', 'Model 3', 'Model 4'))
-        plt.show()
+        # Tworzenie słownika z zestawami cech dla każdego modelu
+        data = {model.modelName: set(model.X.columns) for model in self.model_list}
+        print(data)  # Wydrukuj nazwy cech dla każdego modelu
+
+        # Generowanie kombinacji trzech modeli
+        for subset in itertools.combinations(data.keys(), 3):
+            subset_data = {key: data[key] for key in subset}
+            venn3(subset_data, set_labels = subset_data.keys())
+            plt.show()
+
+
 
     def feature_dependency_plot(self):
         data = []
