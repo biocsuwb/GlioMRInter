@@ -72,7 +72,7 @@ class DataVisualizer:
         for model in self.model_list:
             data.append({
                 'Model Name': model.modelName,
-                'Number of Features': len(model.features),
+                'Number of Features': model.features,
                 'Score': model.score
             })
 

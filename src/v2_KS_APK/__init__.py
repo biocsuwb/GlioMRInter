@@ -28,6 +28,14 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib_venn import venn3
 import itertools
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn import svm
+from sklearn.linear_model import LogisticRegression
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.optimizers import RMSprop
+from sklearn.model_selection import KFold
 
 
 

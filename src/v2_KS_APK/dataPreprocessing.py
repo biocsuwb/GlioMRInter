@@ -141,7 +141,7 @@ class OmicDataPreprocessing:
         self.columns = None
 
     def load_data(self, csv=True):
-        omic_data = pd.read_csv(self.path, sep=',', decimal='.') if(self.path != None) else self.df
+        omic_data = pd.read_csv(self.path, sep=';', decimal=',') if(self.path != None) else self.df
         #print(omic_data.columns[0][:10])
         if 'id' in omic_data.columns:
             self.X = omic_data.drop(columns=["class", "id"])
