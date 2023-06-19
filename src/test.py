@@ -147,15 +147,14 @@ if(trainer_CNA.probabilities): probabilities_df['CNA_prob'] = np.concatenate(tra
 if(trainer_METH.probabilities): probabilities_df['METH_prob'] = np.concatenate(trainer_METH.probabilities).flatten()
 if(trainer_RNA.probabilities): probabilities_df['RNA_prob'] = np.concatenate(trainer_RNA.probabilities).flatten()
 if(trainer_RPPA.probabilities): probabilities_df['RPPA_prob'] = np.concatenate(trainer_RPPA.probabilities).flatten()
-#probabilities_df['IMG_prob'] = images_prob
 
 
 # dodajemy identyfikatory pacjentów jako indeks DataFrame
 probabilities_df.reset_index(drop=True, inplace=True)#probabilities_df.set_index(data_CNA.df.index, inplace=True)  # zakładamy, że data_CNA.df.index zawiera identyfikatory pacjentów
 
 print(probabilities_df)
-images_prob.rename(columns={'prob': 'IMG_prob'}, inplace=True)
-all_df = probabilities_df.merge(images_prob, on='id', how='left')
+trainer_IMG.probabilities.rename(columns={'prob': 'IMG_prob'}, inplace=True)
+all_df = probabilities_df.merge(trainer_IMG.probabilities, on='id', how='left')
 clinical_df = pd.read_csv('correctData/LGG.clinical.id.vitalstatus.csv', sep=';', decimal=',')
 clinical_df.rename(columns={'bcr_patient_barcode': 'id'}, inplace=True)
 subset_df = clinical_df[['vital_status', 'id']]

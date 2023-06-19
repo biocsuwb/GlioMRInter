@@ -179,6 +179,7 @@ class ImageModelBuilding:
         self.n_splits = n_splits
         self.skip = False
         self.kfold = KFold(n_splits=n_splits, random_state=42, shuffle=True)
+        self.probabilities = []
 
         self.modelName = modelName
         self.features = X.shape[1]  # Jeżeli chodzi o liczbę cech w obrazie, można to dostosować
@@ -260,7 +261,7 @@ class ImageModelBuilding:
             'prob': probabilities
         })
 
-        print(results_df)
+        self.probabilities = results_df
         return results_df
 
 
