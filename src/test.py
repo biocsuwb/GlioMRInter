@@ -19,7 +19,7 @@ modelBuilder.cross_validation(data.X, data.y, model, data)
 
 # START
 method = "relief"
-features = 150
+features = 100
 id_path = "E:/Magisterka/AllIDs.xlsx"
 probabilities = True
 
@@ -63,8 +63,10 @@ print(f'\nTIMES:\n- CNA: {data_CNA_time}s\n- METH: {data_METH_time}s\n- RNA: {da
 
 #MODEL
 
+print(data_RPPA.ID)
+
 trainer_RPPA_timeStart = time.time()
-trainer_RPPA = mb.OmicsModelBuilding(id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA")
+trainer_RPPA = mb.OmicsModelBuilding(id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA", patient_ids=data_RPPA.ID)
 trainer_RPPA.cross_validate()
 trainer_RPPA.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
 trainer_RPPA.pickle_save()
@@ -72,21 +74,21 @@ trainer_RPPA_timeStop = trainer_RPPA_timeStop = time.time()
 trainer_RPPA_time = trainer_RPPA_timeStop - trainer_RPPA_timeStart
 
 trainer_METH_timeStart = time.time()
-trainer_METH = mb.OmicsModelBuilding(id_path, data_METH.X, data_METH.y, modelName="METH", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices)
+trainer_METH = mb.OmicsModelBuilding(id_path, data_METH.X, data_METH.y, modelName="METH", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices, patient_ids=data_RPPA.ID)
 trainer_METH.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
 trainer_METH.pickle_save()
 trainer_METH_timeStop = time.time()
 trainer_METH_time = trainer_METH_timeStop - trainer_METH_timeStart
 
 trainer_RNA_timeStart = time.time()
-trainer_RNA = mb.OmicsModelBuilding(id_path, data_RNA.X, data_RNA.y, modelName="RNA", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices)
+trainer_RNA = mb.OmicsModelBuilding(id_path, data_RNA.X, data_RNA.y, modelName="RNA", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices, patient_ids=data_RPPA.ID)
 trainer_RNA.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
 trainer_RNA.pickle_save()
 trainer_RNA_timeStop = time.time()
 trainer_RNA_time = trainer_RNA_timeStop - trainer_RNA_timeStart
 
 trainer_CNA_timeStart = time.time()
-trainer_CNA = mb.OmicsModelBuilding(id_path, data_CNA.X, data_CNA.y, modelName="CNA", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices)
+trainer_CNA = mb.OmicsModelBuilding(id_path, data_CNA.X, data_CNA.y, modelName="CNA", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices, patient_ids=data_RPPA.ID)
 trainer_CNA.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
 trainer_CNA.pickle_save()
 trainer_CNA_timeStop = time.time()
@@ -97,25 +99,54 @@ trainer_METH = mb.ModelBuilder.pickle_load("METH")
 trainer_RNA = mb.ModelBuilder.pickle_load("RNA")
 trainer_RPPA = mb.ModelBuilder.pickle_load("RPPA")
 '''
+
+
+# OBRAZY
+
+# Utwórz obiekt do przetwarzania danych
+data = dp.ImageDataPreprocessing()
+
+# Przygotuj dane
+data.imagesPrep('D:/Magisterka/Dane_LGG', "E:/Magisterka/AllIDs.xlsx")
+
+# Pobierz dane X i y
+X, y = data.X, data.y
+
+modelBuilder = mb.ImageModelBuilding(X, y)
+model = modelBuilder.build_model()  # zakładając, że liczba unikalnych wartości y to liczba klas
+images_prob = modelBuilder.cross_validate(data.patient_ids)
+# KONIEC OBRAZY
+print(images_prob)
+
 # utworzenie nowego DataFrame
 probabilities_df = pd.DataFrame()
 
 print(trainer_RPPA.decisions)
+print(trainer_RPPA.patient_ids)
 
 # dodajemy kolumny prawdopodobieństw dla każdego z modeli
 probabilities_df['class'] = np.concatenate(trainer_RPPA.decisions).flatten()
+probabilities_df['id'] = trainer_RPPA.patient_ids
 if(trainer_CNA.probabilities): probabilities_df['CNA_prob'] = np.concatenate(trainer_CNA.probabilities).flatten()
 if(trainer_METH.probabilities): probabilities_df['METH_prob'] = np.concatenate(trainer_METH.probabilities).flatten()
 if(trainer_RNA.probabilities): probabilities_df['RNA_prob'] = np.concatenate(trainer_RNA.probabilities).flatten()
 if(trainer_RPPA.probabilities): probabilities_df['RPPA_prob'] = np.concatenate(trainer_RPPA.probabilities).flatten()
+#probabilities_df['IMG_prob'] = images_prob
+
 
 # dodajemy identyfikatory pacjentów jako indeks DataFrame
 probabilities_df.reset_index(drop=True, inplace=True)#probabilities_df.set_index(data_CNA.df.index, inplace=True)  # zakładamy, że data_CNA.df.index zawiera identyfikatory pacjentów
 
-print(probabilities_df["class"])
+print(probabilities_df)
+images_prob.rename(columns={'prob': 'IMG_prob'}, inplace=True)
+all_df = probabilities_df.merge(images_prob, on='id', how='left')
+clinical_df = pd.read_csv('correctData/LGG.clinical.id.vitalstatus.csv', sep=';', decimal=',')
+clinical_df.rename(columns={'bcr_patient_barcode': 'id'}, inplace=True)
+all_df = all_df.merge(clinical_df, on='id', how='left')
+print(all_df)
 
 data_ALL_timeStart = time.time()
-data_ALL = dp.OmicDataPreprocessing(df=probabilities_df)
+data_ALL = dp.OmicDataPreprocessing(df=all_df)
 data_ALL.load_data()
 #data_ALL.normalize_data()
 #data_ALL.feature_selection(method="mrmr", n_features=features)

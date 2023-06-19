@@ -5,14 +5,16 @@ class ImageDataPreprocessing:
     X = None
     y = None
     number_of_classes = None
+    ids = None
+    patient_ids = None
 
     def __init__(self):
         pass
 
     def imagesPrep(self, data_path, ids_path):
-        self.load_ids(ids_path)
+        self.ids = self.load_ids(ids_path)
         self.data_path = data_path
-        self.X, self.y = self.read_dicom_images()
+        self.X, self.y, self.patient_ids = self.read_dicom_images()
         #self.X, self.y = self.read_images()
 
     def load_ids(self, ids_path):
@@ -74,9 +76,10 @@ class ImageDataPreprocessing:
         print(f'NOWY STATUS: Wczytuję zdjęcia w formacie DICOM...')
         images = []
         labels = []
+        patient_ids = []
 
-        max_files_per_class = 500
-        max_files_per_patient = 10
+        max_files_per_class = 99999
+        max_files_per_patient = 1
 
         for folder_name in os.listdir(self.data_path):
             folder_path = os.path.join(self.data_path, folder_name)
@@ -105,13 +108,14 @@ class ImageDataPreprocessing:
                                         #image = cv2.resize(image, (512, 512))
                                         images.append(image)
                                         labels.append(int(folder_name))
+                                        patient_ids.append(patient_id)
                                         num_files_per_class += 1
                                         num_files_per_patient += 1
                                         print(f'[{patient_id}] Wczytano plik {file_name}. (Łącznie: {num_files_per_class} plików.)')
                                     except Exception as e:
                                         print("Error reading file {}: {}".format(file_path, e))
 
-        return np.array(images), np.array(labels)
+        return np.array(images), np.array(labels), np.array(patient_ids)
 
     def augment_data(self, x_train, y_train):
         """
@@ -145,10 +149,11 @@ class OmicDataPreprocessing:
         #print(omic_data.columns[0][:10])
         if 'id' in omic_data.columns:
             self.X = omic_data.drop(columns=["class", "id"])
+            self.ID = omic_data["id"]  # Store ID as attribute
+            print(self.ID)
         else:
             self.X = omic_data.drop(columns=["class"])
         self.y = omic_data["class"]
-        #self.ID = omic_data["id"]  # Store ID as attribute
         self.columns = self.X.columns
 
     def normalize_data(self):

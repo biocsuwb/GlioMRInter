@@ -1,7 +1,7 @@
 from . import *
 
 class ModelBuilder:
-    def __init__(self, filepath, X, y, n_splits=5, modelName=None, train_indices=None, test_indices=None):
+    def __init__(self, filepath, X, y, n_splits=5, modelName=None, train_indices=None, test_indices=None, patient_ids=None):
         # Load data
         self.modelName = modelName
         self.skip = False
@@ -11,6 +11,8 @@ class ModelBuilder:
             self.df = pd.read_excel(filepath) if filepath is not None else None
         self.X = X
         self.y = y
+        self.patient_ids = patient_ids
+        self.patient_ids_for_proba = []
         self.probabilities = []
 
         #STATS
@@ -139,6 +141,9 @@ class ModelBuilder:
             for metric in metrics_list:
                 score_func = score_funcs[metric]
                 print(np.unique(y_test), np.unique(y_pred))
+                #if(len(np.unique(y_test)) != 2 or len(np.unique(y_pred)) != 2):
+                #    print(f'ZACZYNAM PONOWNIE...')
+                #    self.train_and_evaluate(model_type=model_type, metrics_list=metrics_list, return_probabilities=return_probabilities)
                 score = score_func(y_test, y_pred, zero_division=1) if metric in ["precision", "recall", "f1_score"] else score_func(y_test, y_pred)
                 #print(f'{metric} score: {score}')  # Add this print statement
                 self.scores[metric].append(score)
@@ -146,7 +151,10 @@ class ModelBuilder:
             if(return_probabilities):
                 proba = [p[0] for p in model.predict_proba(X_test)]
                 self.probabilities.append(proba)
-                print(proba)
+                if self.patient_ids is not None:  # dodanie warunku
+                    self.patient_ids_for_proba.append(self.patient_ids[test_index])
+                    print(proba)
+                    print(self.patient_ids_for_proba)
                 self.decisions.append(y_test)
 
         # Print out the average scores over the folds
@@ -171,42 +179,58 @@ class ImageModelBuilding:
         self.n_splits = n_splits
         self.kfold = KFold(n_splits=n_splits, random_state=42, shuffle=True)
 
-    def build_model(self, num_classes):
-        model = Sequential([
-            Conv2D(32, (3, 3), activation='relu', input_shape=(self.X.shape[1:])),
-            MaxPooling2D((2, 2)),
-            Conv2D(64, (3, 3), activation='relu'),
-            MaxPooling2D((2, 2)),
-            Conv2D(64, (3, 3), activation='relu'),
-            Flatten(),
-            Dense(64, activation='relu'),
-            Dense(num_classes)
+    def build_model(self):
+        model = tf.keras.models.Sequential([
+          tf.keras.layers.Conv2D(16, (3,3), activation='relu', input_shape=(512, 512, 1)),
+          tf.keras.layers.MaxPooling2D(2, 2),
+          tf.keras.layers.Conv2D(32, (3,3), activation='relu'),
+          tf.keras.layers.MaxPooling2D(2,2),
+          tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
+          tf.keras.layers.MaxPooling2D(2,2),
+          tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
+          tf.keras.layers.MaxPooling2D(2,2),
+          tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
+          tf.keras.layers.MaxPooling2D(2,2),
+          tf.keras.layers.Flatten(),
+          tf.keras.layers.Dense(512, activation='relu'),
+          tf.keras.layers.Dense(1, activation='sigmoid')
         ])
-        model.compile(optimizer=Adam(lr=0.001),
-                      loss=SparseCategoricalCrossentropy(from_logits=True),
+        model.summary()
+        model.compile(optimizer=tf.keras.optimizers.legacy.Adam(),
+                      loss=BinaryCrossentropy(from_logits=True),
                       metrics=['accuracy'])
         return model
 
-    def cross_validate(self):
-        fold_no = 1
-        acc_per_fold = []
-        loss_per_fold = []
-        for train, test in self.kfold.split(self.X, self.y):
-            model = self.build_model(len(np.unique(self.y)))
-            history = model.fit(self.X[train], self.y[train], epochs=10, validation_data=(self.X[test], self.y[test]))
-            scores = model.evaluate(self.X[test], self.y[test], verbose=0)
-            print(f'Score for fold {fold_no}: {model.metrics_names[0]} of {scores[0]}; {model.metrics_names[1]} of {scores[1]*100}%')
-            acc_per_fold.append(scores[1] * 100)
-            loss_per_fold.append(scores[0])
-            fold_no = fold_no + 1
-        print(f'Average scores for all folds:')
-        print(f'> Accuracy: {np.mean(acc_per_fold)} (+- {np.std(acc_per_fold)})')
-        print(f'> Loss: {np.mean(loss_per_fold)}')
-        print('------------------------------------------------------------------------')
+    def cross_validate(self, patient_ids):
+        group_kfold = GroupKFold(n_splits=self.n_splits)
+        probabilities = []
+        patient_ids_result = []
+
+        self.X = np.transpose(self.X, (0, 2, 3, 1))
+
+        for train, test in group_kfold.split(self.X, self.y, groups=patient_ids):
+            X_train, X_test = self.X[train], self.X[test]
+            y_train, y_test = self.y[train], self.y[test]
+
+            model = self.build_model()
+            model.fit(X_train, y_train, epochs=10, batch_size=32, verbose=1)  # adjust epochs and batch_size to your needs
+            proba = model.predict(X_test)
+            probabilities.extend((1 - proba).flatten())
+            patient_ids_result.extend(patient_ids[test])
+
+        results_df = pd.DataFrame({
+            'id': patient_ids_result,
+            'prob': probabilities
+        })
+
+        print(results_df)
+        return results_df
+
+
 
 class OmicsModelBuilding(ModelBuilder):
-    def __init__(self, filepath, X, y, n_splits=3, modelName=None, train_indices=None, test_indices=None):
-        super().__init__(filepath, X, y, n_splits, modelName=modelName, train_indices=train_indices, test_indices=test_indices)
+    def __init__(self, filepath, X, y, n_splits=3, modelName=None, train_indices=None, test_indices=None, patient_ids=None):
+        super().__init__(filepath, X, y, n_splits, modelName=modelName, train_indices=train_indices, test_indices=test_indices, patient_ids=patient_ids)
 
-    def train_and_evaluate(self, model_type='random_forest', metrics_list=['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score', 'mcc'], return_probabilities=False):
+    def train_and_evaluate(self, model_type='svm', metrics_list=['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score', 'mcc'], return_probabilities=False):
         super().train_and_evaluate(model_type=model_type, metrics_list=metrics_list, return_probabilities=return_probabilities)

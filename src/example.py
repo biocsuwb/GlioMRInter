@@ -14,8 +14,8 @@ data.imagesPrep('D:/Magisterka/Dane_LGG', "E:/Magisterka/AllIDs.xlsx")
 X, y = data.X, data.y
 
 modelBuilder = mb.ImageModelBuilding(X, y)
-model = modelBuilder.build_model(len(np.unique(y)))  # zakładając, że liczba unikalnych wartości y to liczba klas
-modelBuilder.cross_validate()
+model = modelBuilder.build_model()  # zakładając, że liczba unikalnych wartości y to liczba klas
+modelBuilder.cross_validate(data.patient_ids)
 
 '''
 
