@@ -21,6 +21,7 @@ class DataVisualizer:
 
         boxplot_data = []
         for model in self.model_list:
+            print(f'{model.modelName} scores: {model.scores}')
             if model.scores is not None:
                 for metric in ['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score', 'mcc']:
                     for score in model.scores[metric]:  # Iteracja przez każdą wartość score zamiast obliczania średniej
@@ -37,7 +38,11 @@ class DataVisualizer:
 
     def visualize_models(self):
 
+        if(self.model_list[0].skip):
+            return
+
         plt.figure(figsize=(15, 8))
+        print(self.df)
         sns.barplot(x='Model Name', y='Score', hue='Metric', data=self.df)
         plt.title(f'Model Scores ({self.s_method}; {self.s_features} features)')
         plt.ylabel('Score')
@@ -45,6 +50,10 @@ class DataVisualizer:
         plt.show()
 
     def boxplot(self, metric):
+
+        if(self.model_list[0].skip):
+            return
+
         df_metric = self.df[self.df['Metric'] == metric]
         plt.figure(figsize=(15, 8))
         sns.boxplot(x='Model Name', y="Score", data=self.boxplot_df)

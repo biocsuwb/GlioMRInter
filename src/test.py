@@ -22,7 +22,7 @@ method = "relief"
 features = 100
 id_path = "E:/Magisterka/AllIDs.xlsx"
 probabilities = True
-
+'''
 data_CNA_timeStart = time.time()
 data_CNA = dp.OmicDataPreprocessing(path='correctData/df.CNV.merge.image.LGG.csv')
 #data_CNA = dp.OmicDataPreprocessing(path='data/CNA.csv')
@@ -93,12 +93,6 @@ trainer_CNA.train_and_evaluate(model_type='random_forest', return_probabilities=
 trainer_CNA.pickle_save()
 trainer_CNA_timeStop = time.time()
 trainer_CNA_time = trainer_CNA_timeStop - trainer_CNA_timeStart
-'''
-trainer_CNA = mb.ModelBuilder.pickle_load("CNA")
-trainer_METH = mb.ModelBuilder.pickle_load("METH")
-trainer_RNA = mb.ModelBuilder.pickle_load("RNA")
-trainer_RPPA = mb.ModelBuilder.pickle_load("RPPA")
-'''
 
 
 # OBRAZY
@@ -112,11 +106,33 @@ data.imagesPrep('D:/Magisterka/Dane_LGG', "E:/Magisterka/AllIDs.xlsx")
 # Pobierz dane X i y
 X, y = data.X, data.y
 
-modelBuilder = mb.ImageModelBuilding(X, y)
-model = modelBuilder.build_model()  # zakładając, że liczba unikalnych wartości y to liczba klas
-images_prob = modelBuilder.cross_validate(data.patient_ids)
+trainer_IMG = mb.ImageModelBuilding(X, y)
+model = trainer_IMG.build_model()  # zakładając, że liczba unikalnych wartości y to liczba klas
+images_prob = trainer_IMG.cross_validate(data.patient_ids)
+trainer_IMG.pickle_save()
 # KONIEC OBRAZY
 print(images_prob)
+'''
+trainer_CNA = mb.ModelBuilder.pickle_load("CNA")
+trainer_METH = mb.ModelBuilder.pickle_load("METH")
+trainer_RNA = mb.ModelBuilder.pickle_load("RNA")
+trainer_RPPA = mb.ModelBuilder.pickle_load("RPPA")
+trainer_IMG = mb.ImageModelBuilding.pickle_load("IMG")
+
+plot = dv.DataVisualizer([trainer_RPPA], method, features)
+plot.visualize_models()
+
+plot = dv.DataVisualizer([trainer_METH], method, features)
+plot.visualize_models()
+
+plot = dv.DataVisualizer([trainer_RNA], method, features)
+plot.visualize_models()
+
+plot = dv.DataVisualizer([trainer_CNA], method, features)
+plot.visualize_models()
+
+plot = dv.DataVisualizer([trainer_IMG], method, features)
+plot.visualize_models()
 
 # utworzenie nowego DataFrame
 probabilities_df = pd.DataFrame()
@@ -142,7 +158,8 @@ images_prob.rename(columns={'prob': 'IMG_prob'}, inplace=True)
 all_df = probabilities_df.merge(images_prob, on='id', how='left')
 clinical_df = pd.read_csv('correctData/LGG.clinical.id.vitalstatus.csv', sep=';', decimal=',')
 clinical_df.rename(columns={'bcr_patient_barcode': 'id'}, inplace=True)
-all_df = all_df.merge(clinical_df, on='id', how='left')
+subset_df = clinical_df[['vital_status', 'id']]
+all_df = all_df.merge(subset_df, on='id', how='left')
 print(all_df)
 
 data_ALL_timeStart = time.time()
@@ -160,7 +177,7 @@ trainer_ALL.train_and_evaluate(model_type='random_forest', return_probabilities=
 trainer_ALL_timeStop = time.time()
 trainer_ALL_time = trainer_ALL_timeStop - trainer_ALL_timeStart
 
-plot = dv.DataVisualizer([trainer_RNA, trainer_METH, trainer_CNA, trainer_RPPA], method, features)
+plot = dv.DataVisualizer([trainer_RNA, trainer_METH, trainer_CNA, trainer_RPPA, trainer_IMG], method, features)
 plot.visualize_models()
 plot.boxplot('accuracy')
 #plot.venn_plot()
