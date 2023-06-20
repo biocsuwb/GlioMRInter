@@ -44,38 +44,7 @@ from sklearn.model_selection import GroupKFold
 
 '''
 PYTANIA:
-1. Czy dawać do wyboru jeden selektor cech czy możliwość użycia wszystkich po kolei?
-2. Ile n_features_to_keep w ReliefF?
-
-Wektor prawdopodobieństwa
-
-transcriptomprofile
-copynumbervariation
-
-u-test
-
-Transcriptome Profiling
-
-GBM
-tcgaGDC_data_CNV_genelevel.Rds
-tcgaGD_data_RNA_normalized.Rds
-tcgaGD_data_protein.Rds
-tcgaGD_data_Meth.Rds
-tcgaGDC_data_GE_counts.Rds
-
-Venn Plot!
-
-Z każdych danych tabela, póxniej wybierzemy przypadki
-
-1. Sprawdzić ID które się pokrywają i zrobić tabele z danymi
-2. Pierwszą kolumnę zrobić zmienną decyzyjną
-3. Przetestować obrazy
-
-Zmienna decyzyjna jak coś w tcgaGD_data_clin.Rds
-
-W RPPA brakuje indeksów!
-
-
-
-    ValueError: Only one class present in y_true. ROC AUC score is not defined in that case
+1. Czy zbiór jest za mały skoro nie liczy mi pewnych wartości metryk?
+2. Dane kliniczne to tylko vital_status - co napisać w przetwarzaniu danych klinicznych itp?
+3.
 '''
