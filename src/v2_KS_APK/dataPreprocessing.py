@@ -143,17 +143,20 @@ class OmicDataPreprocessing:
         self.X = None
         self.y = None
         self.columns = None
+        self.omic_data = None
 
     def load_data(self, csv=True):
-        omic_data = pd.read_csv(self.path, sep=';', decimal=',') if(self.path != None) else self.df
-        #print(omic_data.columns[0][:10])
-        if 'id' in omic_data.columns:
-            self.X = omic_data.drop(columns=["class", "id"])
-            self.ID = omic_data["id"]  # Store ID as attribute
+        self.omic_data = pd.read_csv(self.path, sep=';', decimal=',') if(self.path != None) else self.df
+
+    def Xy_data(self):
+        print(len(self.omic_data))
+        if 'id' in self.omic_data.columns:
+            self.X = self.omic_data.drop(columns=["class", "id"])
+            self.ID = self.omic_data["id"]  # Store ID as attribute
             print(self.ID)
         else:
-            self.X = omic_data.drop(columns=["class"])
-        self.y = omic_data["class"]
+            self.X = self.omic_data.drop(columns=["class"])
+        self.y = self.omic_data["class"]
         self.columns = self.X.columns
 
     def normalize_data(self):

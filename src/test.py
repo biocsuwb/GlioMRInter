@@ -22,44 +22,89 @@ method = "relief"
 features = 100
 id_path = "E:/Magisterka/AllIDs.xlsx"
 probabilities = True
-'''
-data_CNA_timeStart = time.time()
+
 data_CNA = dp.OmicDataPreprocessing(path='correctData/df.CNV.merge.image.LGG.csv')
-#data_CNA = dp.OmicDataPreprocessing(path='data/CNA.csv')
+data_METH = dp.OmicDataPreprocessing(path='correctData/df.METH.merge.image.LGG.csv')
+data_RNA = dp.OmicDataPreprocessing(path='correctData/df.RNA.merge.image.LGG.csv')
+data_RPPA = dp.OmicDataPreprocessing(path='correctData/df.RPPA.merge.image.LGG.csv')
+
 data_CNA.load_data()
+data_METH.load_data()
+data_RNA.load_data()
+data_RPPA.load_data()
+
+# Inicjujemy common_ids jako pusty zestaw
+common_ids = set()
+
+# Pobieramy unię wszystkich ID
+for data in [data_CNA, data_METH, data_RNA, data_RPPA]:
+    common_ids = common_ids.union(set(data.omic_data['id']))
+
+# Iterujemy przez wszystkie zbiory danych, znajdując wspólne ID
+for data in [data_CNA, data_METH, data_RNA, data_RPPA]:
+    common_ids = common_ids.intersection(set(data.omic_data['id']))
+
+# Teraz 'common_ids' zawiera ID pacjentów, którzy są obecni we wszystkich plikach
+print(common_ids)
+
+# Iterujemy ponownie przez wszystkie zbiory danych, tym razem filtrując je, aby zawierały tylko wspólne ID
+print(len(data_CNA.omic_data), "<-")
+data_CNA.omic_data = data_CNA.omic_data[data_CNA.omic_data['id'].isin(common_ids)]
+data_CNA.omic_data = data_CNA.omic_data.reset_index(drop=True)
+print(len(data_CNA.omic_data), "<-")
+
+print(len(data_METH.omic_data), "<-")
+data_METH.omic_data = data_METH.omic_data[data_METH.omic_data['id'].isin(common_ids)]
+data_METH.omic_data = data_METH.omic_data.reset_index(drop=True)
+print(len(data_METH.omic_data), "<-")
+
+print(len(data_RNA.omic_data), "<-")
+data_RNA.omic_data = data_RNA.omic_data[data_RNA.omic_data['id'].isin(common_ids)]
+data_RNA.omic_data = data_RNA.omic_data.reset_index(drop=True)
+print(len(data_RNA.omic_data), "<-")
+
+print(len(data_RPPA.omic_data), "<-")
+data_RPPA.omic_data = data_RPPA.omic_data[data_RPPA.omic_data['id'].isin(common_ids)]
+data_RPPA.omic_data = data_RPPA.omic_data.reset_index(drop=True)
+print(len(data_RPPA.omic_data), "<-")
+
+
+
+
+
+###data_CNA_timeStart = time.time()
+#data_CNA = dp.OmicDataPreprocessing(path='data/CNA.csv')
+data_CNA.Xy_data()
 data_CNA.normalize_data()
 data_CNA.feature_selection(method=method, n_features=features)
-data_CNA_timeStop = time.time()
-data_CNA_time = data_CNA_timeStop - data_CNA_timeStart
+###data_CNA_timeStop = time.time()
+###data_CNA_time = data_CNA_timeStop - data_CNA_timeStart
 
-data_METH_timeStart = time.time()
-data_METH = dp.OmicDataPreprocessing(path='correctData/df.METH.merge.image.LGG.csv')
+###data_METH_timeStart = time.time()
 #data_METH = dp.OmicDataPreprocessing(path='data/METH.csv')
-data_METH.load_data()
+data_METH.Xy_data()
 data_METH.normalize_data()
 data_METH.feature_selection(method=method, n_features=features)
-data_METH_timeStop = time.time()
-data_METH_time = data_METH_timeStop - data_METH_timeStart
+###data_METH_timeStop = time.time()
+###data_METH_time = data_METH_timeStop - data_METH_timeStart
 
-data_RNA_timeStart = time.time()
-data_RNA = dp.OmicDataPreprocessing(path='correctData/df.RNA.merge.image.LGG.csv')
+###data_RNA_timeStart = time.time()
 #data_RNA = dp.OmicDataPreprocessing(path='data/RNA.csv')
-data_RNA.load_data()
+data_RNA.Xy_data()
 data_RNA.normalize_data()
 data_RNA.feature_selection(method=method, n_features=features)
-data_RNA_timeStop = time.time()
-data_RNA_time = data_RNA_timeStop - data_RNA_timeStart
+###data_RNA_timeStop = time.time()
+###data_RNA_time = data_RNA_timeStop - data_RNA_timeStart
 
-data_RPPA_timeStart = time.time()
-data_RPPA = dp.OmicDataPreprocessing(path='correctData/df.RPPA.merge.image.LGG.csv')
+###data_RPPA_timeStart = time.time()
 #data_RPPA = dp.OmicDataPreprocessing(path='data/RPPA.csv')
-data_RPPA.load_data()
+data_RPPA.Xy_data()
 data_RPPA.normalize_data()
 data_RPPA.feature_selection(method=method, n_features=features)
-data_RPPA_timeStop = time.time()
-data_RPPA_time = data_RPPA_timeStop - data_RPPA_timeStart
+###data_RPPA_timeStop = time.time()
+###data_RPPA_time = data_RPPA_timeStop - data_RPPA_timeStart
 
-print(f'\nTIMES:\n- CNA: {data_CNA_time}s\n- METH: {data_METH_time}s\n- RNA: {data_RNA_time}s\n- RPPA: {data_RPPA_time}s')
+#print(f'\nTIMES:\n- CNA: {data_CNA_time}s\n- METH: {data_METH_time}s\n- RNA: {data_RNA_time}s\n- RPPA: {data_RPPA_time}s')
 
 #MODEL
 
@@ -118,7 +163,7 @@ trainer_METH = mb.ModelBuilder.pickle_load("METH")
 trainer_RNA = mb.ModelBuilder.pickle_load("RNA")
 trainer_RPPA = mb.ModelBuilder.pickle_load("RPPA")
 trainer_IMG = mb.ImageModelBuilding.pickle_load("IMG")
-
+'''
 plot = dv.DataVisualizer([trainer_RPPA], method, features)
 plot.visualize_models()
 
