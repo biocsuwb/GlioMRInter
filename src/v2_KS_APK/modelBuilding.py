@@ -105,7 +105,7 @@ class ModelBuilder:
             #print("Train indices:", train_index)
             #print("Test indices:", test_index)
 
-            self.X.reset_index(drop=True, inplace=True)
+            #self.X.reset_index(drop=True, inplace=True)
 
             print("Shape of X:", self.X.shape)
             print("Max train_index:", max(train_index))
@@ -128,8 +128,10 @@ class ModelBuilder:
             print(X_train)
             print("y_train:")
             print(y_train)
+            print(np.unique(y_train))
             print("y_test:")
             print(y_test)
+            print(np.unique(y_test))
 
             # Fit the model
             model.fit(X_train, y_train)
@@ -144,7 +146,7 @@ class ModelBuilder:
                 #if(len(np.unique(y_test)) != 2 or len(np.unique(y_pred)) != 2):
                 #    print(f'ZACZYNAM PONOWNIE...')
                 #    self.train_and_evaluate(model_type=model_type, metrics_list=metrics_list, return_probabilities=return_probabilities)
-                score = score_func(y_test, y_pred, zero_division=0) if metric in ["precision", "recall", "f1_score"] else score_func(y_test, y_pred)
+                score = score_func(y_test, y_pred, zero_division=1) if metric in ["precision", "recall", "f1_score"] else score_func(y_test, y_pred)
                 #print(f'{metric} score: {score}')  # Add this print statement
                 self.scores[metric].append(score)
 
@@ -270,5 +272,5 @@ class OmicsModelBuilding(ModelBuilder):
     def __init__(self, filepath, X, y, n_splits=2, modelName=None, train_indices=None, test_indices=None, patient_ids=None):
         super().__init__(filepath, X, y, n_splits, modelName=modelName, train_indices=train_indices, test_indices=test_indices, patient_ids=patient_ids)
 
-    def train_and_evaluate(self, model_type='svm', metrics_list=['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score', 'mcc'], return_probabilities=False):
+    def train_and_evaluate(self, model_type='random_forest', metrics_list=['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score', 'mcc'], return_probabilities=False):
         super().train_and_evaluate(model_type=model_type, metrics_list=metrics_list, return_probabilities=return_probabilities)

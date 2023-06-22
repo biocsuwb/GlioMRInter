@@ -33,40 +33,49 @@ data_METH.load_data()
 data_RNA.load_data()
 data_RPPA.load_data()
 
+data_CNA.omic_data = data_CNA.omic_data.drop_duplicates(subset='id', keep='first')
+data_METH.omic_data = data_METH.omic_data.drop_duplicates(subset='id', keep='first')
+data_RNA.omic_data = data_RNA.omic_data.drop_duplicates(subset='id', keep='first')
+data_RPPA.omic_data = data_RPPA.omic_data.drop_duplicates(subset='id', keep='first')
+
 # Inicjujemy common_ids jako pusty zestaw
-common_ids = set()
+common_ids = set(data_CNA.omic_data['id'])
 
-# Pobieramy unię wszystkich ID
-for data in [data_CNA, data_METH, data_RNA, data_RPPA]:
-    common_ids = common_ids.union(set(data.omic_data['id']))
-
-# Iterujemy przez wszystkie zbiory danych, znajdując wspólne ID
-for data in [data_CNA, data_METH, data_RNA, data_RPPA]:
+for data in [data_METH, data_RNA, data_RPPA]:
     common_ids = common_ids.intersection(set(data.omic_data['id']))
 
 # Teraz 'common_ids' zawiera ID pacjentów, którzy są obecni we wszystkich plikach
 print(common_ids)
 
+print("CNA duplicates:", data_CNA.omic_data['id'].duplicated().any())
+print("METH duplicates:", data_METH.omic_data['id'].duplicated().any())
+print("RNA duplicates:", data_RNA.omic_data['id'].duplicated().any())
+print("RPPA duplicates:", data_RPPA.omic_data['id'].duplicated().any())
+
 # Iterujemy ponownie przez wszystkie zbiory danych, tym razem filtrując je, aby zawierały tylko wspólne ID
 print(len(data_CNA.omic_data), "<-")
 data_CNA.omic_data = data_CNA.omic_data[data_CNA.omic_data['id'].isin(common_ids)]
-data_CNA.omic_data = data_CNA.omic_data.reset_index(drop=True)
 print(len(data_CNA.omic_data), "<-")
+data_CNA.omic_data = data_CNA.omic_data.reset_index(drop=True)
+print(len(data_CNA.omic_data), "<- =====")
 
 print(len(data_METH.omic_data), "<-")
 data_METH.omic_data = data_METH.omic_data[data_METH.omic_data['id'].isin(common_ids)]
-data_METH.omic_data = data_METH.omic_data.reset_index(drop=True)
 print(len(data_METH.omic_data), "<-")
+data_METH.omic_data = data_METH.omic_data.reset_index(drop=True)
+print(len(data_METH.omic_data), "<- =====")
 
 print(len(data_RNA.omic_data), "<-")
 data_RNA.omic_data = data_RNA.omic_data[data_RNA.omic_data['id'].isin(common_ids)]
-data_RNA.omic_data = data_RNA.omic_data.reset_index(drop=True)
 print(len(data_RNA.omic_data), "<-")
+data_RNA.omic_data = data_RNA.omic_data.reset_index(drop=True)
+print(len(data_RNA.omic_data), "<- =====")
 
 print(len(data_RPPA.omic_data), "<-")
 data_RPPA.omic_data = data_RPPA.omic_data[data_RPPA.omic_data['id'].isin(common_ids)]
-data_RPPA.omic_data = data_RPPA.omic_data.reset_index(drop=True)
 print(len(data_RPPA.omic_data), "<-")
+data_RPPA.omic_data = data_RPPA.omic_data.reset_index(drop=True)
+print(len(data_RPPA.omic_data), "<- =====")
 
 
 
@@ -113,28 +122,28 @@ print(data_RPPA.ID)
 trainer_RPPA_timeStart = time.time()
 trainer_RPPA = mb.OmicsModelBuilding(id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA", patient_ids=data_RPPA.ID)
 trainer_RPPA.cross_validate()
-trainer_RPPA.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
+trainer_RPPA.train_and_evaluate(model_type='logistic_regression', return_probabilities=probabilities)
 trainer_RPPA.pickle_save()
 trainer_RPPA_timeStop = trainer_RPPA_timeStop = time.time()
 trainer_RPPA_time = trainer_RPPA_timeStop - trainer_RPPA_timeStart
 
 trainer_METH_timeStart = time.time()
 trainer_METH = mb.OmicsModelBuilding(id_path, data_METH.X, data_METH.y, modelName="METH", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices, patient_ids=data_RPPA.ID)
-trainer_METH.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
+trainer_METH.train_and_evaluate(model_type='logistic_regression', return_probabilities=probabilities)
 trainer_METH.pickle_save()
 trainer_METH_timeStop = time.time()
 trainer_METH_time = trainer_METH_timeStop - trainer_METH_timeStart
 
 trainer_RNA_timeStart = time.time()
 trainer_RNA = mb.OmicsModelBuilding(id_path, data_RNA.X, data_RNA.y, modelName="RNA", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices, patient_ids=data_RPPA.ID)
-trainer_RNA.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
+trainer_RNA.train_and_evaluate(model_type='logistic_regression', return_probabilities=probabilities)
 trainer_RNA.pickle_save()
 trainer_RNA_timeStop = time.time()
 trainer_RNA_time = trainer_RNA_timeStop - trainer_RNA_timeStart
 
 trainer_CNA_timeStart = time.time()
 trainer_CNA = mb.OmicsModelBuilding(id_path, data_CNA.X, data_CNA.y, modelName="CNA", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices, patient_ids=data_RPPA.ID)
-trainer_CNA.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
+trainer_CNA.train_and_evaluate(model_type='logistic_regression', return_probabilities=probabilities)
 trainer_CNA.pickle_save()
 trainer_CNA_timeStop = time.time()
 trainer_CNA_time = trainer_CNA_timeStop - trainer_CNA_timeStart
@@ -209,6 +218,7 @@ print(all_df)
 data_ALL_timeStart = time.time()
 data_ALL = dp.OmicDataPreprocessing(df=all_df)
 data_ALL.load_data()
+data_ALL.Xy_data()
 #data_ALL.normalize_data()
 #data_ALL.feature_selection(method="mrmr", n_features=features)
 data_ALL_timeStop = time.time()
