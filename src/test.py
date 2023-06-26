@@ -18,7 +18,7 @@ modelBuilder.cross_validation(data.X, data.y, model, data)
 '''
 
 # START
-method = "fcbf"
+method = "utest"
 features = 50
 id_path = "E:/Magisterka/AllIDs.xlsx"
 probabilities = True
@@ -122,28 +122,28 @@ print(data_RPPA.ID)
 trainer_RPPA_timeStart = time.time()
 trainer_RPPA = mb.OmicsModelBuilding(id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA", patient_ids=data_RPPA.ID)
 trainer_RPPA.cross_validate()
-trainer_RPPA.train_and_evaluate(model_type='logistic_regression', return_probabilities=probabilities)
+trainer_RPPA.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
 trainer_RPPA.pickle_save()
 trainer_RPPA_timeStop = trainer_RPPA_timeStop = time.time()
 trainer_RPPA_time = trainer_RPPA_timeStop - trainer_RPPA_timeStart
 
 trainer_METH_timeStart = time.time()
 trainer_METH = mb.OmicsModelBuilding(id_path, data_METH.X, data_METH.y, modelName="METH", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices, patient_ids=data_RPPA.ID)
-trainer_METH.train_and_evaluate(model_type='logistic_regression', return_probabilities=probabilities)
+trainer_METH.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
 trainer_METH.pickle_save()
 trainer_METH_timeStop = time.time()
 trainer_METH_time = trainer_METH_timeStop - trainer_METH_timeStart
 
 trainer_RNA_timeStart = time.time()
 trainer_RNA = mb.OmicsModelBuilding(id_path, data_RNA.X, data_RNA.y, modelName="RNA", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices, patient_ids=data_RPPA.ID)
-trainer_RNA.train_and_evaluate(model_type='logistic_regression', return_probabilities=probabilities)
+trainer_RNA.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
 trainer_RNA.pickle_save()
 trainer_RNA_timeStop = time.time()
 trainer_RNA_time = trainer_RNA_timeStop - trainer_RNA_timeStart
 
 trainer_CNA_timeStart = time.time()
 trainer_CNA = mb.OmicsModelBuilding(id_path, data_CNA.X, data_CNA.y, modelName="CNA", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices, patient_ids=data_RPPA.ID)
-trainer_CNA.train_and_evaluate(model_type='logistic_regression', return_probabilities=probabilities)
+trainer_CNA.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
 trainer_CNA.pickle_save()
 trainer_CNA_timeStop = time.time()
 trainer_CNA_time = trainer_CNA_timeStop - trainer_CNA_timeStart

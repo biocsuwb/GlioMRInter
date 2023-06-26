@@ -138,7 +138,7 @@ class OmicDataPreprocessing:
         self.decimal = decimal
 
     def load_data(self):
-        self.omic_data = pd.read_csv(self.path, sep=sep, decimal=decimal) if(self.path != None) else self.df
+        self.omic_data = pd.read_csv(self.path, sep=self.sep, decimal=self.decimal) if(self.path != None) else self.df
 
     def Xy_data(self):
         if self.df is None or self.df.empty:
