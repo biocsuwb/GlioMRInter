@@ -175,7 +175,7 @@ class ModelBuilder:
 
 class ImageModelBuilding:
 
-    def __init__(self, X, y, n_splits=2, modelName='IMG'):
+    def __init__(self, X, y, n_splits=3, modelName='IMG'):
         self.X = X
         self.y = y
         self.n_splits = n_splits
@@ -269,7 +269,7 @@ class ImageModelBuilding:
 
 
 class OmicsModelBuilding(ModelBuilder):
-    def __init__(self, filepath, X, y, n_splits=2, modelName=None, train_indices=None, test_indices=None, patient_ids=None):
+    def __init__(self, filepath, X, y, n_splits=3, modelName=None, train_indices=None, test_indices=None, patient_ids=None):
         super().__init__(filepath, X, y, n_splits, modelName=modelName, train_indices=train_indices, test_indices=test_indices, patient_ids=patient_ids)
 
     def train_and_evaluate(self, model_type='random_forest', metrics_list=['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score', 'mcc'], return_probabilities=False):

@@ -18,8 +18,8 @@ modelBuilder.cross_validation(data.X, data.y, model, data)
 '''
 
 # START
-method = "relief"
-features = 100
+method = "fcbf"
+features = 50
 id_path = "E:/Magisterka/AllIDs.xlsx"
 probabilities = True
 
@@ -231,7 +231,7 @@ trainer_ALL.train_and_evaluate(model_type='random_forest', return_probabilities=
 trainer_ALL_timeStop = time.time()
 trainer_ALL_time = trainer_ALL_timeStop - trainer_ALL_timeStart
 
-plot = dv.DataVisualizer([trainer_RNA, trainer_METH, trainer_CNA, trainer_RPPA, trainer_IMG], method, features)
+plot = dv.DataVisualizer([trainer_RNA, trainer_METH, trainer_CNA, trainer_RPPA, trainer_IMG, trainer_ALL], method, features)
 plot.visualize_models()
 plot.boxplot('accuracy')
 #plot.venn_plot()

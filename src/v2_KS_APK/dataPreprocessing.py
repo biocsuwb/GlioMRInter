@@ -21,16 +21,6 @@ class ImageDataPreprocessing:
         print(f'NOWY STATUS: Wczytuję ID z pliku .xlsx...')
         return pd.read_excel(ids_path, header=None, names=['ID', 'VALUE'])
 
-    def get_id(self, label):
-        if self.ids is None:
-            print("Dataframe 'ids' nie został wczytany.")
-            return None
-
-        try:
-            return self.ids[self.ids['ID'] == label]['VALUE'].values[0]
-        except IndexError:
-            return None
-
     def read_images(self):
         print(f'NOWY STATUS: Wczytuję zdjęcia...')
 
@@ -136,7 +126,7 @@ class ImageDataPreprocessing:
 
 class OmicDataPreprocessing:
 
-    def __init__(self, path=None, df=None):
+    def __init__(self, path=None, df=None, sep=';', decimal=','):
         self.path = path
         self.df = df
         self.ID = None
@@ -144,9 +134,11 @@ class OmicDataPreprocessing:
         self.y = None
         self.columns = None
         self.omic_data = None
+        self.sep = sep
+        self.decimal = decimal
 
-    def load_data(self, csv=True):
-        self.omic_data = pd.read_csv(self.path, sep=';', decimal=',') if(self.path != None) else self.df
+    def load_data(self):
+        self.omic_data = pd.read_csv(self.path, sep=sep, decimal=decimal) if(self.path != None) else self.df
 
     def Xy_data(self):
         if self.df is None or self.df.empty:
@@ -180,7 +172,7 @@ class OmicDataPreprocessing:
         to_drop = [column for column in upper.columns if any(upper[column] > correlation_threshold)]
         self.X = self.X.drop(columns=to_drop)  # Drop redundant features
 
-    def feature_selection(self, method=None, n_features=100, correlation_threshold=0.75):
+    def feature_selection(self, method=None, n_features=100, correlation_threshold=0.5):
         if method == 'mrmr':
             old = self.X.shape[1]
             selected_features = pymrmr.mRMR(self.X, 'MIQ', n_features)
@@ -191,9 +183,6 @@ class OmicDataPreprocessing:
         elif method == 'relief':
             old = self.X.shape[1]
             fs = ReliefF(n_neighbors=10, n_features_to_keep=n_features)
-            #print("Before fit_transform in ReliefF, data type is:", type(self.X))
-            #print("First few rows of data:", self.X.head())
-            #print("Data contains non-numeric values:", self.X.isnull().any().any())
             X_numpy = self.X.values
             transformed_X = fs.fit_transform(X_numpy, self.y)
             feature_scores = fs.feature_scores
