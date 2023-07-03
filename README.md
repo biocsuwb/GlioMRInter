@@ -1,7 +1,7 @@
-# Nazwa Twojego Projektu
+# GlioMRInter
 
 ## Opis
-Krótki opis Twojego projektu. Opis powinien być zwięzły, ale jednocześnie wystarczająco szczegółowy, aby ktoś, kto go przeczyta, zrozumiał, co Twój projekt robi.
+GlioMRInter to system integracji dużych zestawów danych klinicznych, omicznych i obrazowych w celu wsparcia diagnozowania lub prognozowania pacjentów z nowotworami ośrodkowego układu nerwowego z wykorzystaniem zaawansowanych metod uczenia nadzorowanego tj. głębokich sieci neuronowych i uczenia maszynowego.
 
 ## Instalacja
 Aby zainstalować ten pakiet, sklonuj repozytorium i zainstaluj za pomocą pip:
@@ -9,6 +9,10 @@ Aby zainstalować ten pakiet, sklonuj repozytorium i zainstaluj za pomocą pip:
 git clone https://github.com/GlioMRInter/GlioMRInter
 cd GlioMRInter
 pip install .
+
+Lub:
+
+pip install GlioMRInter==1.0
 
 ## Użycie  
 
