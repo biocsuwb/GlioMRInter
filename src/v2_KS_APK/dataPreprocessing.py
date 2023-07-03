@@ -172,7 +172,7 @@ class OmicDataPreprocessing:
         to_drop = [column for column in upper.columns if any(upper[column] > correlation_threshold)]
         self.X = self.X.drop(columns=to_drop)  # Drop redundant features
 
-    def feature_selection(self, method=None, n_features=100, correlation_threshold=0.5):
+    def feature_selection(self, method=None, n_features=100, correlation_threshold=0.75):
         if method == 'mrmr':
             old = self.X.shape[1]
             selected_features = pymrmr.mRMR(self.X, 'MIQ', n_features)
@@ -202,6 +202,8 @@ class OmicDataPreprocessing:
                 p_values[column] = p_value
             _, p_value_adjusted, _, _ = multipletests(list(p_values.values()), method='fdr_bh')
             selected_features = [column for column, adjusted_p_value in zip(p_values.keys(), p_value_adjusted) if adjusted_p_value < 0.05]
+            if len(selected_features) > n_features: # ogranicz do n_features
+                selected_features = selected_features[:n_features]
             self.X = self.X[selected_features]
             self.remove_redundant_features(correlation_threshold)
             print(f'{old} -> [U-Test] -> {self.X.shape[1]}')
@@ -215,6 +217,10 @@ class OmicDataPreprocessing:
             # Wybór cech
             selected_features = self.X.columns[idx[0]]
 
+            # ograniczenie do n_features jeżeli liczba cech jest większa niż n_features
+            if len(selected_features) > n_features:
+                selected_features = selected_features[:n_features]
+
             # Aktualizacja X do tylko wybranych cech
             self.X = self.X[selected_features]
 
@@ -222,3 +228,18 @@ class OmicDataPreprocessing:
             self.remove_redundant_features(correlation_threshold)
 
             print(f'{old} -> [FCBF] -> {self.X.shape[1]}')
+
+        elif method == 'mdfs':
+            old = self.X.shape[1]
+            X_numpy = self.X.values
+            results = mdfs.run(X_numpy, self.y)
+            important_features = results['relevant_variables']
+            if len(important_features) > n_features:
+                important_features = important_features[:n_features]
+            selected_features = self.X.columns[important_features]
+            self.X = self.X[selected_features]
+            self.remove_redundant_features(correlation_threshold)
+            print(f'{old} -> [MDFS] -> {self.X.shape[1]}')
+
+        else:
+            raise ValueError("Invalid method. Options are 'mrmr', 'relief', 'utest', 'fcbf', and 'mdfs'.")

@@ -1,44 +1,45 @@
+# Standardowe biblioteki
 import os
 import re
-import cv2
 import time
+import itertools
 import pickle
-import pydicom
+
+# Biblioteki naukowe i obliczeniowe
 import numpy as np
-import pymrmr
 import pandas as pd
-from ReliefF import ReliefF
 import scipy.stats as stats
-from sklearn import metrics
-import tensorflow as tf
-import tensorflow_io as tfio
-from keras import models, layers
-from sklearn.preprocessing import StandardScaler
+import pydicom
+import cv2
+from sklearn import metrics, model_selection, ensemble
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from keras.utils import to_categorical
-from sklearn import model_selection, ensemble
-from sklearn.preprocessing import LabelEncoder
-from tensorflow.keras.optimizers import RMSprop
-from keras.preprocessing.image import ImageDataGenerator
-from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split, StratifiedKFold, GroupKFold, KFold
 from statsmodels.stats.multitest import multipletests
 from skfeature.function.information_theoretical_based import FCBF
+
+# Biblioteki do przetwarzania obrazów i uczenia maszynowego
+import tensorflow as tf
+import tensorflow_io as tfio
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras.optimizers import RMSprop, Adam
+from tensorflow.keras.losses import BinaryCrossentropy
+from keras import models, layers
+from keras.utils import to_categorical
+from keras.preprocessing.image import ImageDataGenerator
+
+# Biblioteki do wyboru cech
+import pymrmr
+from ReliefF import ReliefF
+
+# Biblioteki do wizualizacji
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib_venn import venn3
-import itertools
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from sklearn import svm
-from sklearn.linear_model import LogisticRegression
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
-from tensorflow.keras.optimizers import RMSprop
-from sklearn.model_selection import KFold
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.losses import BinaryCrossentropy
-from sklearn.model_selection import GroupKFold
+
 
 
 

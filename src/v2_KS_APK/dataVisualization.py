@@ -64,32 +64,38 @@ class DataVisualizer:
 
 
     def venn_plot(self):
-        # Tworzenie słownika z zestawami cech dla każdego modelu
-        data = {model.modelName: set(model.X.columns) for model in self.model_list}
-        print(data)  # Wydrukuj nazwy cech dla każdego modelu
+        data = {model.modelName: (model.featureNames if model.modelName != "IMG" else None) for model in self.model_list}
+        print(data)
 
-        # Generowanie kombinacji trzech modeli
         for subset in itertools.combinations(data.keys(), 3):
+            if ("IMG" in subset): continue
             subset_data = {key: data[key] for key in subset}
-            venn3(subset_data, set_labels = subset_data.keys())
-            plt.show()
+            subset_values = [set(values) for values in subset_data.values() if values is not None]
+
+            if len(subset_values) > 0:
+                if None in subset_values:
+                    subset_values.remove(None)
+
+                if len(subset_values) > 0:
+                    venn3(subset_values, set_labels=list(subset_data.keys()))
+                    plt.title('Venn Diagram')
+                    plt.show()
+
 
 
 
     def feature_dependency_plot(self):
-        data = []
-        for model in self.model_list:
-            data.append({
-                'Model Name': model.modelName,
-                'Number of Features': model.features,
-                'Score': model.score
-            })
+        metrics = ['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score', 'mcc']
 
-        df = pd.DataFrame(data)
+        for metric in metrics:
+            data = []
+            for i, model in enumerate(self.model_list):
+                avg_score = sum(model.scores[metric])/len(model.scores[metric])
+                data.append({'Liczba cech': features[i], 'Score': avg_score, 'Metric': metric})
 
-        plt.figure(figsize=(15, 8))
-        sns.lineplot(x='Number of Features', y='Score', hue='Model Name', data=df)
-        plt.title('Accuracy vs Number of Features')
-        plt.ylabel('Score')
-        plt.xlabel('Number of Features')
-        plt.show()
+            df = pd.DataFrame(data)
+        
+            plt.figure(figsize=(10, 5))
+            sns.lineplot(x='Liczba cech', y='Score', data=df, marker='o')
+            plt.title(f'Zmiana wartości metryki {metric} w zależności od liczby cech')
+            plt.show()

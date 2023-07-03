@@ -1,4 +1,5 @@
 from . import *
+from memory_profiler import profile
 
 class ModelBuilder:
     def __init__(self, filepath, X, y, n_splits=2, modelName=None, train_indices=None, test_indices=None, patient_ids=None):
@@ -18,6 +19,8 @@ class ModelBuilder:
         #STATS
         self.n_splits = n_splits
         self.features = self.X.shape[1]
+        self.featureNames = self.X.columns
+        print(self.featureNames)
         self.scores = None
 
         if(self.modelName != None): print(f'=== BUILDING MODEL: {self.modelName} ===')
@@ -66,13 +69,16 @@ class ModelBuilder:
         print("Train indices:", self.train_indices)
         print("Test indices:", self.test_indices)
 
+    @profile
     def train_and_evaluate(self, model_type='random_forest', metrics_list=['accuracy'], return_probabilities=False):
 
         if(self.skip): return
 
+        start_time = time.time()
+
         model_dict = {
             'random_forest': RandomForestClassifier,
-            'svm': svm.SVC,
+            'svm': SVC,
             'logistic_regression': LogisticRegression
         }
 
@@ -139,6 +145,9 @@ class ModelBuilder:
             # Make predictions
             y_pred = model.predict(X_test)
 
+            end_time = time.time()
+            print(f'Total training time: {abs(end_time - start_time)}s')
+
             # Evaluate the model and store scores
             for metric in metrics_list:
                 score_func = score_funcs[metric]
@@ -195,27 +204,64 @@ class ImageModelBuilding:
         with open(f'{modelName}.pkl', 'rb') as file:
             return pickle.load(file)
 
-    def build_model(self):
-        model = tf.keras.models.Sequential([
-          tf.keras.layers.Conv2D(16, (3,3), activation='relu', input_shape=(512, 512, 1)),
-          tf.keras.layers.MaxPooling2D(2, 2),
-          tf.keras.layers.Conv2D(32, (3,3), activation='relu'),
-          tf.keras.layers.MaxPooling2D(2,2),
-          tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
-          tf.keras.layers.MaxPooling2D(2,2),
-          tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
-          tf.keras.layers.MaxPooling2D(2,2),
-          tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
-          tf.keras.layers.MaxPooling2D(2,2),
-          tf.keras.layers.Flatten(),
-          tf.keras.layers.Dense(512, activation='relu'),
-          tf.keras.layers.Dense(1, activation='sigmoid')
-        ])
+    @profile
+    def build_model(self, model_type=0):
+
+        start_time = time.time()
+
+        if model_type == 0:
+            model = tf.keras.models.Sequential([
+                tf.keras.layers.Conv2D(16, (3,3), activation='relu', input_shape=(512, 512, 1)),
+                tf.keras.layers.MaxPooling2D(2, 2),
+                tf.keras.layers.Conv2D(32, (3,3), activation='relu'),
+                tf.keras.layers.MaxPooling2D(2,2),
+                tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
+                tf.keras.layers.MaxPooling2D(2,2),
+                tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
+                tf.keras.layers.MaxPooling2D(2,2),
+                tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
+                tf.keras.layers.MaxPooling2D(2,2),
+                tf.keras.layers.Flatten(),
+                tf.keras.layers.Dense(512, activation='relu'),
+                tf.keras.layers.Dense(1, activation='sigmoid')
+            ])
+        elif model_type == 1:
+            model = tf.keras.models.Sequential([
+                tf.keras.layers.Conv2D(32, (3,3), activation='relu', input_shape=(512, 512, 1)),
+                tf.keras.layers.MaxPooling2D(2, 2),
+                tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
+                tf.keras.layers.MaxPooling2D(2,2),
+                tf.keras.layers.Conv2D(128, (3,3), activation='relu'),
+                tf.keras.layers.MaxPooling2D(2,2),
+                tf.keras.layers.Flatten(),
+                tf.keras.layers.Dense(512, activation='relu'),
+                tf.keras.layers.Dense(1, activation='sigmoid')
+            ])
+        elif model_type == 2:
+            model = tf.keras.models.Sequential([
+                tf.keras.layers.Conv2D(16, (3,3), activation='relu', input_shape=(512, 512, 1)),
+                tf.keras.layers.MaxPooling2D(2, 2),
+                tf.keras.layers.Conv2D(32, (3,3), activation='relu'),
+                tf.keras.layers.MaxPooling2D(2,2),
+                tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
+                tf.keras.layers.MaxPooling2D(2,2),
+                tf.keras.layers.Flatten(),
+                tf.keras.layers.Dense(256, activation='relu'),
+                tf.keras.layers.Dense(1, activation='sigmoid')
+            ])
+        else:
+            raise ValueError("Invalid model_type. Must be 0, 1, or 2.")
+
         model.summary()
         model.compile(optimizer=tf.keras.optimizers.legacy.Adam(),
                       loss=BinaryCrossentropy(from_logits=True),
                       metrics=['accuracy'])
+
+        end_time = time.time()
+        print(f'Total training time: {abs(end_time - start_time)}s')
+
         return model
+
 
     def cross_validate(self, patient_ids, metrics_list=['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score', 'mcc']):
         group_kfold = GroupKFold(n_splits=self.n_splits)
