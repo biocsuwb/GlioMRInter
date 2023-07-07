@@ -51,7 +51,6 @@ def run(method, features, id_path="E:/Magisterka/AllIDs.xlsx", probabilities=Tru
     for data in [data_METH, data_RNA, data_RPPA]:
         common_ids = common_ids.intersection(set(data.omic_data['id']))
 
-    # Teraz 'common_ids' zawiera ID pacjentów, którzy są obecni we wszystkich plikach
     print(common_ids)
 
     print("CNA duplicates:", data_CNA.omic_data['id'].duplicated().any())
@@ -59,7 +58,6 @@ def run(method, features, id_path="E:/Magisterka/AllIDs.xlsx", probabilities=Tru
     print("RNA duplicates:", data_RNA.omic_data['id'].duplicated().any())
     print("RPPA duplicates:", data_RPPA.omic_data['id'].duplicated().any())
 
-    # Iterujemy ponownie przez wszystkie zbiory danych, tym razem filtrując je, aby zawierały tylko wspólne ID
     print(len(data_CNA.omic_data), "<-")
     data_CNA.omic_data = data_CNA.omic_data[data_CNA.omic_data['id'].isin(common_ids)]
     print(len(data_CNA.omic_data), "<-")
@@ -87,40 +85,21 @@ def run(method, features, id_path="E:/Magisterka/AllIDs.xlsx", probabilities=Tru
 
 
 
-
-    ###data_CNA_timeStart = time.time()
-    #data_CNA = dp.OmicDataPreprocessing(path='data/CNA.csv')
     data_CNA.Xy_data()
     data_CNA.normalize_data()
     data_CNA.feature_selection(method=method, n_features=features)
-    ###data_CNA_timeStop = time.time()
-    ###data_CNA_time = data_CNA_timeStop - data_CNA_timeStart
 
-    ###data_METH_timeStart = time.time()
-    #data_METH = dp.OmicDataPreprocessing(path='data/METH.csv')
     data_METH.Xy_data()
     data_METH.normalize_data()
     data_METH.feature_selection(method=method, n_features=features)
-    ###data_METH_timeStop = time.time()
-    ###data_METH_time = data_METH_timeStop - data_METH_timeStart
 
-    ###data_RNA_timeStart = time.time()
-    #data_RNA = dp.OmicDataPreprocessing(path='data/RNA.csv')
     data_RNA.Xy_data()
     data_RNA.normalize_data()
     data_RNA.feature_selection(method=method, n_features=features)
-    ###data_RNA_timeStop = time.time()
-    ###data_RNA_time = data_RNA_timeStop - data_RNA_timeStart
 
-    ###data_RPPA_timeStart = time.time()
-    #data_RPPA = dp.OmicDataPreprocessing(path='data/RPPA.csv')
     data_RPPA.Xy_data()
     data_RPPA.normalize_data()
     data_RPPA.feature_selection(method=method, n_features=features)
-    ###data_RPPA_timeStop = time.time()
-    ###data_RPPA_time = data_RPPA_timeStop - data_RPPA_timeStart
-
-    #print(f'\nTIMES:\n- CNA: {data_CNA_time}s\n- METH: {data_METH_time}s\n- RNA: {data_RNA_time}s\n- RPPA: {data_RPPA_time}s')
 
     #MODEL
 
@@ -158,20 +137,19 @@ def run(method, features, id_path="E:/Magisterka/AllIDs.xlsx", probabilities=Tru
 
     # OBRAZY
 
-    # Utwórz obiekt do przetwarzania danych
     data = dp.ImageDataPreprocessing()
-
-    # Przygotuj dane
     data.imagesPrep('D:/Magisterka/Dane_LGG', "E:/Magisterka/AllIDs.xlsx")
 
-    # Pobierz dane X i y
     X, y = data.X, data.y
 
+    trainer_IMG_timeStart = time.time()
     trainer_IMG = mb.ImageModelBuilding(X, y)
-    model = trainer_IMG.build_model()  # zakładając, że liczba unikalnych wartości y to liczba klas
+    model = trainer_IMG.build_model()
     images_prob = trainer_IMG.cross_validate(data.patient_ids)
     trainer_IMG.pickle_save()
-    # KONIEC OBRAZY
+    trainer_IMG_timeStop = trainer_IMG_timeStop = time.time()
+    trainer_IMG_time = trainer_IMG_timeStop - trainer_IMG_timeStart
+
     print(images_prob)
     '''
     trainer_CNA = mb.ModelBuilder.pickle_load("CNA")
@@ -195,13 +173,12 @@ def run(method, features, id_path="E:/Magisterka/AllIDs.xlsx", probabilities=Tru
     plot = dv.DataVisualizer([trainer_IMG], method, features)
     plot.visualize_models()
     '''
-    # utworzenie nowego DataFrame
+
     probabilities_df = pd.DataFrame()
 
     print(trainer_RPPA.decisions)
     print(trainer_RPPA.patient_ids)
 
-    # dodajemy kolumny prawdopodobieństw dla każdego z modeli
     probabilities_df['class'] = np.concatenate(trainer_RPPA.decisions).flatten()
     probabilities_df['id'] = trainer_RPPA.patient_ids
     if(trainer_CNA.probabilities): probabilities_df['CNA_prob'] = np.concatenate(trainer_CNA.probabilities).flatten()
@@ -210,9 +187,7 @@ def run(method, features, id_path="E:/Magisterka/AllIDs.xlsx", probabilities=Tru
     if(trainer_RPPA.probabilities): probabilities_df['RPPA_prob'] = np.concatenate(trainer_RPPA.probabilities).flatten()
 
 
-    # dodajemy identyfikatory pacjentów jako indeks DataFrame
-    probabilities_df.reset_index(drop=True, inplace=True)#probabilities_df.set_index(data_CNA.df.index, inplace=True)  # zakładamy, że data_CNA.df.index zawiera identyfikatory pacjentów
-
+    probabilities_df.reset_index(drop=True, inplace=True)
     print(probabilities_df)
     trainer_IMG.probabilities.rename(columns={'prob': 'IMG_prob'}, inplace=True)
     all_df = probabilities_df.merge(trainer_IMG.probabilities, on='id', how='left')
@@ -220,14 +195,11 @@ def run(method, features, id_path="E:/Magisterka/AllIDs.xlsx", probabilities=Tru
     clinical_df.rename(columns={'bcr_patient_barcode': 'id'}, inplace=True)
     subset_df = clinical_df[['vital_status', 'id']]
     all_df = all_df.merge(subset_df, on='id', how='left')
-    print(all_df)
 
     data_ALL_timeStart = time.time()
     data_ALL = dp.OmicDataPreprocessing(df=all_df)
     data_ALL.load_data()
     data_ALL.Xy_data()
-    #data_ALL.normalize_data()
-    #data_ALL.feature_selection(method="mrmr", n_features=features)
     data_ALL_timeStop = time.time()
     data_ALL_time = data_ALL_timeStop - data_ALL_timeStart
 
@@ -247,20 +219,20 @@ def run(method, features, id_path="E:/Magisterka/AllIDs.xlsx", probabilities=Tru
     return trainer_ALL
 
 
-t10 = run("relief", 10)
-t20 = run("relief", 20)
-t50 = run("relief", 50)
-t100 = run("relief", 100)
-t150 = run("relief", 150)
+#t10 = run("utest", 10)
+#t20 = run("utest", 20)
+t50 = run("utest", 50)
+#t100 = run("utest", 100)
+#t150 = run("utest", 150)
 
 # Lista modeli
-models = [t10, t20, t50, t100, t150]
+models = [t50]
 
 # Lista wartości cech
-features = [10, 20, 50, 100, 150]
+features = [50]
 
 # Lista metryk
-metrics = ['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score', 'mcc']
+metrics = ['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score', 'mcc', 'mean_squared_error']
 
 for metric in metrics:
     data = []

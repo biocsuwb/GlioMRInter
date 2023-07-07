@@ -39,18 +39,3 @@ from ReliefF import ReliefF
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib_venn import venn3
-
-
-
-
-'''
-PYTANIA:
-1. Czy zbiór jest za mały skoro nie liczy mi pewnych wartości metryk?
-2. Dane kliniczne to tylko vital_status - co napisać w przetwarzaniu danych klinicznych itp?
-3.
-
-
-- ROBIĆ CZĘŚĆ WSPÓLNĄ NAJPIERW PRZED KROSWALIDACJĄ
-- 2-krotna kroswalidacja
-- wybór sieci konwolucyjnej
-'''

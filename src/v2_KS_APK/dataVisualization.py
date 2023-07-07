@@ -24,7 +24,7 @@ class DataVisualizer:
             print(f'{model.modelName} scores: {model.scores}')
             if model.scores is not None:
                 for metric in ['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc_score', 'mcc']:
-                    for score in model.scores[metric]:  # Iteracja przez każdą wartość score zamiast obliczania średniej
+                    for score in model.scores[metric]:  
                         boxplot_data.append({
                             'Model Name': f'{model.modelName} ({model.n_splits} splits, {model.features} features)',
                             'Metric': metric,
@@ -94,7 +94,7 @@ class DataVisualizer:
                 data.append({'Liczba cech': features[i], 'Score': avg_score, 'Metric': metric})
 
             df = pd.DataFrame(data)
-        
+
             plt.figure(figsize=(10, 5))
             sns.lineplot(x='Liczba cech', y='Score', data=df, marker='o')
             plt.title(f'Zmiana wartości metryki {metric} w zależności od liczby cech')

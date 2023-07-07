@@ -15,7 +15,6 @@ class ImageDataPreprocessing:
         self.ids = self.load_ids(ids_path)
         self.data_path = data_path
         self.X, self.y, self.patient_ids = self.read_dicom_images()
-        #self.X, self.y = self.read_images()
 
     def load_ids(self, ids_path):
         print(f'NOWY STATUS: Wczytuję ID z pliku .xlsx...')
@@ -38,14 +37,11 @@ class ImageDataPreprocessing:
                     file_path = os.path.join(folder_path, file_name)
                     if file_name.endswith(".png") and num_files < max_files_per_folder:
                         try:
-                            # Wczytanie pliku obrazu .png lub .jpg
                             image = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
 
                             if image is not None:
-                                # Skalowanie obrazu do wymiarów 512x512
                                 image = cv2.resize(image, (512, 512))
 
-                                # Dopasowanie obrazu do jednorodnego kształtu
                                 image = image.reshape((1,) + image.shape)
 
                                 images.append(image)
@@ -86,16 +82,12 @@ class ImageDataPreprocessing:
                                     try:
                                         ds = pydicom.dcmread(file_path)
                                         pixel_array = ds.pixel_array
-                                        # skalowanie obrazu do wymiarów 512x512
                                         pixel_array = cv2.resize(pixel_array, (512, 512))
-                                        # usuwanie kanałów koloru, pozostawienie tylko kanału zielonego
                                         if len(pixel_array.shape) > 2:
                                             pixel_array = pixel_array[:,:,1]
-                                        # Dopasowanie obrazu do jednorodnego kształtu
                                         pixel_array = pixel_array.reshape((1,) + pixel_array.shape)
 
                                         image = pixel_array
-                                        #image = cv2.resize(image, (512, 512))
                                         images.append(image)
                                         labels.append(int(folder_name))
                                         patient_ids.append(patient_id)
@@ -210,23 +202,12 @@ class OmicDataPreprocessing:
 
         elif method == 'fcbf':
             old = self.X.shape[1]
-
-            # Obliczanie współczynnika korelacji FCBF
             idx = FCBF.fcbf(self.X.values, self.y.values)
-
-            # Wybór cech
             selected_features = self.X.columns[idx[0]]
-
-            # ograniczenie do n_features jeżeli liczba cech jest większa niż n_features
             if len(selected_features) > n_features:
                 selected_features = selected_features[:n_features]
-
-            # Aktualizacja X do tylko wybranych cech
             self.X = self.X[selected_features]
-
-            # Usunięcie nadmiarowych cech
             self.remove_redundant_features(correlation_threshold)
-
             print(f'{old} -> [FCBF] -> {self.X.shape[1]}')
 
         elif method == 'mdfs':
