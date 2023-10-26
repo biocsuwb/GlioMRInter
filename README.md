@@ -13,7 +13,7 @@ GlioMRInter is a system for integrating large clinical, omics and imaging data s
 * establish the selected parameters for predictive models, such as: ;
 * save and visualize the data and model results in the form of plots and tables;
 
-![Fig.1]([Scheme1G.png](https://github.com/biocsuwb/Images/blob/e28f8568123169bb65451b219ade4e900f498e8f/Scheme1G.png?raw=true))
+![Fig.1](https://github.com/biocsuwb/Images/blob/main/Scheme1G.png?raw=true)
 Fig.1 The GlioMRInter scheme.
 
 ## Instalacja
