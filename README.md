@@ -1,6 +1,18 @@
-# GlioMRInter
+# GlioMRInter: python package for clinical, multi-omics and image glioma data integration and analysis
+## Welcome to GlioMRInter
+**GlioMRInter is a Python package that allows the user to:**
+* filter the most informative biomarkers from molecular data generated from high-throughput experiments;
+* remove redundant and correlated features (biomarkes) from the obtained feature subsets;
+* build and evaluate individual predictive model (binary task) with multiple omics data by using the random forest or support vector classifier (SVC) algorithms and machine learning validation techniques;
+* build and evaluate individual predictive model (binary task) with image data by using the convolutional neural network (CNN) and machine learning validation techniques;
+* build and evaluate the ensemble predictive model (binary task) with clinical and syntetic variables (omics and image) by using the random forest or support vector classifier (SVC) algorithms and machine learning validation techniques;
+* perform data augmentation for image data;
+* offer various stability measures for assessing the stability of a given method on a given data set in comparison with other methods.
+* establish the selected parameters for predictive models, such as: ;
+* save and visualize the data and model results in the form of plots and tables;
 
-## Opis
+
+
 GlioMRInter to system integracji dużych zestawów danych klinicznych, omicznych i obrazowych w celu wsparcia diagnozowania lub prognozowania pacjentów z nowotworami ośrodkowego układu nerwowego z wykorzystaniem zaawansowanych metod uczenia nadzorowanego tj. głębokich sieci neuronowych i uczenia maszynowego.
 
 ## Instalacja
