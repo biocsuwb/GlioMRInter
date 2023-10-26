@@ -1,5 +1,5 @@
 # GlioMRInter: python package for clinical, multi-omics and image glioma data integration and analysis
-## Welcome to GlioMRInter
+## Description
 **GlioMRInter is a Python package that allows the user to:**
 * filter the most informative biomarkers from molecular data generated from high-throughput experiments;
 * remove redundant and correlated features (biomarkes) from the obtained feature subsets;
