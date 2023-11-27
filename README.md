@@ -18,13 +18,6 @@ Fig.1 The GlioMRInter scheme.
 
 
 ## Install the development version from GitHub:
-
-```r
-install.packages("devtools")
-devtools::install_github("biocsuwb/EnsembleFS-package")
-```
-
-## Instalacja
 To install this package, clone the repository and install with pip:
 ```r
 git clone https://github.com/GlioMRInter/GlioMRInter
@@ -35,14 +28,12 @@ or:
 
 pip install GlioMRInter==1.0
 ```
-## Notes: 
-- ***to install the GlioMRInter package in your python environment, make sure that you have Java installed (rJava R package);***
 
 ## Example data sets
 
-In this study the different type of molecular data and image data from the Cancer Genome Atlas Low Grade Glioma (TCGA-LGG) project were used.
-Raw data sets were download from The Cancer Genome Atlas database ([TCGA](https://www.cancer.gov/tcga)) and The Cancer Imaging Program database ([TCIA]([The Cancer Imaging Program](https://www.cancerimagingarchive.net/)))
-The following type of data were available for these patients::
+To demonstrate the functionality of GlioMRInter the different type of molecular data and image data from the Cancer Genome Atlas Low Grade Glioma (TCGA-LGG) project were used.
+Raw data sets can be download from The Cancer Genome Atlas database ([TCGA](https://www.cancer.gov/tcga)) and The Cancer Imaging Program database ([TCIA]([The Cancer Imaging Program](https://www.cancerimagingarchive.net/)))
+The following type of data were used:
 - clinical data (CD);
 - gene expression profiles (GE) obtained with Illumina Human HT-12 v3 microarray;
 - copy-number alterations data (CNA) obtained with Affymetrix SNP 6.0;
@@ -53,31 +44,13 @@ The following type of data were available for these patients::
 
 The preprocessing of molecular data involved standard steps, namely, the log2 transformation of data was performed and the features with zero and near-zero (1%) variance across patients were removed. The data from disparate sources were consolided and merged by the ID patients. For testing purposes, the number of molecular markers was limited to 2000 DEGs ranked by the highest difference in the gene expression level between tumor and normal tissues ([exampleData_TCGA_LUAD_2000.csv](https://github.com/biocsuwb/EnsembleFS-package/tree/main/data)). 
 
-## Example 1 - Construct the individual predictive model 
+## Example 1 - Construct the individual predictive model from molecular data
 
-#### Loading data
+### Load omics data
 ```r
-download.file("https://raw.githubusercontent.com/biocsuwb/EnsembleFS-package/main/data/exampleData_TCGA_LUAD_2000.csv", 
-              destfile = "exampleData_TCGA_LUAD_2000.csv", method = "curl")
+download.file("https://raw.githubusercontent.com/biocsuwb/EnsembleFS-package/main/data/correctData/df.METH.merge.image.LGG.csv", 
+              destfile = "correctData/df.METH.merge.image.LGG.csv", method = "curl")
 
-data <- read.csv2('exampleData_TCGA_LUAD_2000.csv')
-decisions <- data$class
-data$class <- NULL
-```
-
-### Set up the model configuration parameters
-
-#### Set up the configuration parameters for feature selection method
-```r
-- method = *** "utest"***;
-- features = 50
-- id_path = "E:/Magisterka/AllIDs.xlsx"
-- probabilities = True
-```
-
-Następnie wczytujemy i ładujemy dane omiczne, a także usuwamy duplikaty z tych zbiorów.
-
-```
 data_CNA = dp.OmicDataPreprocessing(path='correctData/df.CNV.merge.image.LGG.csv')
 data_METH = dp.OmicDataPreprocessing(path='correctData/df.METH.merge.image.LGG.csv')
 data_RNA = dp.OmicDataPreprocessing(path='correctData/df.RNA.merge.image.LGG.csv')
@@ -87,17 +60,19 @@ data_CNA.load_data()
 data_METH.load_data()
 data_RNA.load_data()
 data_RPPA.load_data()
+```
 
+#### Remove duplicates from data sets (optional).
+
+```r
 data_CNA.omic_data = data_CNA.omic_data.drop_duplicates(subset='id', keep='first')
 data_METH.omic_data = data_METH.omic_data.drop_duplicates(subset='id', keep='first')
 data_RNA.omic_data = data_RNA.omic_data.drop_duplicates(subset='id', keep='first')
 data_RPPA.omic_data = data_RPPA.omic_data.drop_duplicates(subset='id', keep='first')
 
 ```
-
-W kolejnym kroku modyfikujemy wszystkie dane omiczne, aby ze wszystkich zbiorów uchwycić część wspólną. Jest to dobra praktyka, która zapobiega ewentualnym problemom z identyfikatorami i rekordami w zbiorach danych.
-
-```
+#### Integrate data - merge data sets with ID samples (optional)
+```r
 common_ids = set(data_CNA.omic_data['id'])
 
 for data in [data_METH, data_RNA, data_RPPA]:
@@ -116,27 +91,49 @@ data_RPPA.omic_data = data_RPPA.omic_data[data_RPPA.omic_data['id'].isin(common_
 data_RPPA.omic_data = data_RPPA.omic_data.reset_index(drop=True)
 
 ```
+####  Split your original dataset into predictors (X) and descriptor (y) and normalize X data (optional)
 
-Ostatnim krokiem odnoszącym się do wstępnego przetwarzania danych jest dla każdego zbioru podzielenie danych na cechy i zmienne decyzyjne, a także przeprowadzenie selekcji cech. Opcjonalnie można w tym momencie również przeprowadzić normalizację danych wejściowych.
-
-```
+```r
 data_CNA.Xy_data()
 data_CNA.normalize_data()
-data_CNA.feature_selection(method=method, n_features=features)
 
 data_METH.Xy_data()
 data_METH.normalize_data()
-data_METH.feature_selection(method=method, n_features=features)
 
 data_RNA.Xy_data()
 data_RNA.normalize_data()
-data_RNA.feature_selection(method=method, n_features=features)
 
 data_RPPA.Xy_data()
 data_RPPA.normalize_data()
+```
+
+### Perform feature selection (optional)
+#### Model (optional) configuration parameters
+EnsembleFS allows the user to set some parameter values, such as:
+- feature selection methods: ***method = c("utest", "fs.mcfs", "fs.mrmr", "fs.mdfs.1D", "fs.mdfs.2D")***;
+- U-test and MDFS parameter, multitest correction: ***adjust = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none")***;
+- U-test and MDFS parameter, significance level: ***alpha = 0.05***;
+- MRMR parameter, number of significant features: ***feature.number = 100***;
+- MCFS parameter, cut-off method: ***cutoff.method = c("permutations", "criticalAngle", "kmeans", "mean", "contrast")***;
+- correlation coefficient: ***level.cor = 1***;
+- validation methods: ***method.cv = c('kfoldcv','rsampling')***;
+- number of repetitions: ***niter = 10***;
+- train-test-split the data: ***k = 3*** for stratified k-fold cross-validation and ***test.size = 0.3*** for random sampling.
+
+#### Set up the configuration parameters for feature selection method
+```r
+- method = *** "mdfs1d"***;
+- features = 100
+- id_path = "E:/models/AllIDs.xlsx"
+- probabilities = True
+```
+
+data_CNA.feature_selection(method=method, n_features=features)
+data_METH.feature_selection(method=method, n_features=features)
+data_RNA.feature_selection(method=method, n_features=features)
 data_RPPA.feature_selection(method=method, n_features=features)
 
-```
+
 
 Budowa modeli odbywa się z wykorzystaniem zewnętrznej kroswalidacji. Mamy pewność, że zewnętrzna kroswalidacja mimo zastosowania różnych typów danych (przy odpowiadających sobie indeksach) zadziała jak powinna. Dla każdego zbioru zostaje zbudowany, wytrenowany i zwalidowany model, który następnie przechowuje wyprodukowane zmienne syntetyczne. Poniżej, celem uniknięcia długich listingów kodu, przedstawiono dwa pierwsze modele. W pierwszym z nich przeprowadzana jest funkcja cross_validate(), natomiast w każdym kolejnym już zamiast niej przekazywane są pola z numerami indeksów dokładnie z tego modelu, który tą funkcję wywołał.
 
