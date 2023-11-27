@@ -16,28 +16,63 @@ GlioMRInter is a system for integrating large clinical, omics and imaging data s
 ![Fig.1](https://github.com/biocsuwb/Images/blob/main/Scheme1G.png?raw=true)
 Fig.1 The GlioMRInter scheme.
 
-## Instalacja
-Aby zainstalować ten pakiet, sklonuj repozytorium i zainstaluj za pomocą pip:
 
+## Install the development version from GitHub:
+
+```r
+install.packages("devtools")
+devtools::install_github("biocsuwb/EnsembleFS-package")
+```
+
+## Instalacja
+To install this package, clone the repository and install with pip:
+```r
 git clone https://github.com/GlioMRInter/GlioMRInter
 cd GlioMRInter
 pip install .
 
-Lub:
+or:
 
 pip install GlioMRInter==1.0
-
-## Użycie  
-
-Tu znajdują się przykładowe użycia Twojego projektu. Właściwe przykłady pomagają innym zrozumieć, jak mogą korzystać z Twojego kodu. Przykład:
-
-Najwygodniej rozpocząć pracę z pakietem od zdefiniowania pewnych wartości, które łatwiej będzie modyfikować w przyszłości i które znajdą zastosowanie jako przyszłe argumenty funkcji wywoływanych w skrypcie. Poniżej przedstawiono te wartości:
-
 ```
-method = "utest"
-features = 50
-id_path = "E:/Magisterka/AllIDs.xlsx"
-probabilities = True
+## Notes: 
+- ***to install the GlioMRInter package in your python environment, make sure that you have Java installed (rJava R package);***
+
+## Example data sets
+
+In this study the different type of molecular data and image data from the Cancer Genome Atlas Low Grade Glioma (TCGA-LGG) project were used.
+Raw data sets were download from The Cancer Genome Atlas database ([TCGA](https://www.cancer.gov/tcga)) and The Cancer Imaging Program database ([TCIA]([The Cancer Imaging Program](https://www.cancerimagingarchive.net/)))
+The following type of data were available for these patients::
+- clinical data (CD);
+- gene expression profiles (GE) obtained with Illumina Human HT-12 v3 microarray;
+- copy-number alterations data (CNA) obtained with Affymetrix SNP 6.0;
+- mRNA levels of gene expression (RNA-seq V2 RSEM normalized expression values);
+- DNA methylation profiles (METH) generated from Illumina HM450K array (beta-values for genes);
+- protein expression profiling with reverse-phase protein arrays (RPPA); 
+- MRI image data.
+
+The preprocessing of molecular data involved standard steps, namely, the log2 transformation of data was performed and the features with zero and near-zero (1%) variance across patients were removed. The data from disparate sources were consolided and merged by the ID patients. For testing purposes, the number of molecular markers was limited to 2000 DEGs ranked by the highest difference in the gene expression level between tumor and normal tissues ([exampleData_TCGA_LUAD_2000.csv](https://github.com/biocsuwb/EnsembleFS-package/tree/main/data)). 
+
+## Example 1 - Construct the individual predictive model 
+
+#### Loading data
+```r
+download.file("https://raw.githubusercontent.com/biocsuwb/EnsembleFS-package/main/data/exampleData_TCGA_LUAD_2000.csv", 
+              destfile = "exampleData_TCGA_LUAD_2000.csv", method = "curl")
+
+data <- read.csv2('exampleData_TCGA_LUAD_2000.csv')
+decisions <- data$class
+data$class <- NULL
+```
+
+### Set up the model configuration parameters
+
+#### Set up the configuration parameters for feature selection method
+```r
+- method = *** "utest"***;
+- features = 50
+- id_path = "E:/Magisterka/AllIDs.xlsx"
+- probabilities = True
 ```
 
 Następnie wczytujemy i ładujemy dane omiczne, a także usuwamy duplikaty z tych zbiorów.
