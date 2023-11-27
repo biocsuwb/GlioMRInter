@@ -118,8 +118,9 @@ data_RPPA.normalize_data()
 
 ### Perform feature selection (optional)
 #### Input parameters of feature_selection() method from dataPreprocessing module
-Syntax: dataPreprocessing.feature_selection(method = None, n_features = 100, correlation_treshold = 0.75)
-Input parameter values :
+Syntax:
+.feature_selection(method = None, n_features = 100, correlation_treshold = 0.75)
+Input parameter values:
 - feature selection methods: ***method = "utest", "mdfs", "fcbf", "relief", "mrmr"***;
 - number of selected Ntop relevant features: ***n_features = 100***;
 - Spearman's rank correlation coefficient <0, 1>: ***correlation_treshold = 0.75***;
@@ -144,16 +145,18 @@ data_RPPA.feature_selection(method="mrmr", n_features=100)
 ```
 ### Build and evaluate the predictive model with omic data
 #### Input parameters of OmicsModelBuilding class from modelBuilding module
-Syntax: modelBuilding.OmicsModelBuilding(id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA", patient_ids=data_RPPA.ID)
+Syntax:
+OmicsModelBuilding(id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA", patient_ids=data_RPPA.ID)
 Input parameters:
 - path to .xlsx or .csv format file with id of all samples: ***id_path***;
 - model name: ***modelName***;
 - id samples: ***patient_ids***;
 #### Input parameters of train_and_evaluate() method from modelBuilding module
-Syntax: .train_and_evaluate(model_type='random_forest', return_probabilities=True)
+Syntax: 
+.train_and_evaluate(model_type='random_forest', return_probabilities=True)
 Input parameters:
-- binary classifier: ***model_type = "random_forest", "svc", "logistic_reg"***;
-***return_probabilities*** - model return the values of prediction vector as probabilities for return_probabilities=True and as logit values for return_probabilities=False;
+- used binary classifier: ***model_type = "random_forest", "svc", "logistic_reg"***;
+- ***return_probabilities***: model return the values of prediction vector as probabilities for return_probabilities=True and as logit values for return_probabilities=False;
 
 ```r
 id_path = "E:/models/AllIDs.xlsx"
