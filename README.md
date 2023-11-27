@@ -150,19 +150,23 @@ OmicsModelBuilding(id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA", patient_
 Input parameters:
 - path to .xlsx or .csv format file with id of all samples: ***id_path***;
 - model name: ***modelName***;
+- - ***train_indices***: indices of previous build model;
+- ***test_indices***: indices of previous evaluated model;
 - id samples: ***patient_ids***;
 #### Input parameters of train_and_evaluate() method from modelBuilding module
 Syntax: 
 .train_and_evaluate(model_type='random_forest', return_probabilities=True)
 Input parameters:
-- used binary classifier: ***model_type = "random_forest", "svc", "logistic_reg"***;
+- binary classifier: ***model_type = "random_forest", "svc", "logistic_reg"***;
 - ***return_probabilities***: model return the values of prediction vector as probabilities for return_probabilities=True and as logit values for return_probabilities=False;
 
 ```r
 id_path = "E:/models/AllIDs.xlsx"
-trainer_RPPA = mb.OmicsModelBuilding(id_path = id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA", patient_ids=data_RPPA.ID)
+
+trainer_RPPA = mb.OmicsModelBuilding(id_path = id_path, train_indices = data_RPPA.X, test_indices = data_RPPA.y, modelName="RPPA", patient_ids=data_RPPA.ID)
 trainer_RPPA.cross_validate()
 trainer_RPPA.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
+
 # save model result (optional) 
 trainer_RPPA.pickle_save()
 
@@ -178,23 +182,19 @@ Input parameters:
 - model name: ***modelName***;
 - id samples: ***patient_ids***;
 
-
-```
-### Prepare omic data for machine learning
+###  Prepare omic data for machine learning
+```r
 data = dp.ImageDataPreprocessing()
 data.imagesPrep('D:/Magisterka/Dane_LGG', "E:/Magisterka/AllIDs.xlsx")
-
 X, y = data.X, data.y
 
-trainer_IMG_timeStart = time.time()
+### Build and evaluate the predictive model
 trainer_IMG = mb.ImageModelBuilding(X, y)
 model = trainer_IMG.build_model() 
 images_prob = trainer_IMG.cross_validate(data.patient_ids)
-trainer_IMG.pickle_save()
-trainer_IMG_timeStop = trainer_IMG_timeStop = time.time()
-trainer_IMG_time = trainer_IMG_timeStop - trainer_IMG_timeStart
-
 ```
+
+
 
 Fragment kodu przedstawia integrację danych klinicznych, omicznych i obrazowych w celu utworzenia modelu zintegrowanego. Wykorzystuje do tego utworzone wcześniej modele oraz dodatkowe dane kliniczne.
 
