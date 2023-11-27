@@ -16,6 +16,21 @@ GlioMRInter is a system for integrating large clinical, omics and imaging data s
 ![Fig.1](https://github.com/biocsuwb/Images/blob/main/Scheme1G.png?raw=true)
 Fig.1 The GlioMRInter scheme.
 
+# Description of used data sets
+
+To demonstrate the functionality of GlioMRInter the different type of molecular data and image data from the Cancer Genome Atlas Low Grade Glioma (TCGA-LGG) project were used.
+Raw data sets can be download from The Cancer Genome Atlas database ([TCGA](https://www.cancer.gov/tcga)) and The Cancer Imaging Program database ([TCIA]([The Cancer Imaging Program](https://www.cancerimagingarchive.net/)))
+The following type of data were used:
+- clinical data (CD);
+- gene expression profiles (GE) obtained with Illumina Human HT-12 v3 microarray;
+- copy-number alterations data (CNA) obtained with Affymetrix SNP 6.0;
+- mRNA levels of gene expression (RNA-seq V2 RSEM normalized expression values);
+- DNA methylation profiles (METH) generated from Illumina HM450K array (beta-values for genes);
+- protein expression profiling with reverse-phase protein arrays (RPPA); 
+- MRI image data.
+
+The preprocessing of molecular data involved standard steps, namely, the log2 transformation of data was performed and the features with zero and near-zero (1%) variance across patients were removed. The data from disparate sources were consolided and merged by the ID patients. For testing purposes, the number of molecular markers was limited to 2000 DEGs ranked by the highest difference in the gene expression level between tumor and normal tissues ([exampleData_TCGA_LUAD_2000.csv](https://github.com/biocsuwb/EnsembleFS-package/tree/main/data)). 
+
 
 ## Install the development version from GitHub:
 To install this package, clone the repository and install with pip:
@@ -37,20 +52,6 @@ import time
 import pandas as pd
 import numpy as np
 ```
-## Example data sets
-
-To demonstrate the functionality of GlioMRInter the different type of molecular data and image data from the Cancer Genome Atlas Low Grade Glioma (TCGA-LGG) project were used.
-Raw data sets can be download from The Cancer Genome Atlas database ([TCGA](https://www.cancer.gov/tcga)) and The Cancer Imaging Program database ([TCIA]([The Cancer Imaging Program](https://www.cancerimagingarchive.net/)))
-The following type of data were used:
-- clinical data (CD);
-- gene expression profiles (GE) obtained with Illumina Human HT-12 v3 microarray;
-- copy-number alterations data (CNA) obtained with Affymetrix SNP 6.0;
-- mRNA levels of gene expression (RNA-seq V2 RSEM normalized expression values);
-- DNA methylation profiles (METH) generated from Illumina HM450K array (beta-values for genes);
-- protein expression profiling with reverse-phase protein arrays (RPPA); 
-- MRI image data.
-
-The preprocessing of molecular data involved standard steps, namely, the log2 transformation of data was performed and the features with zero and near-zero (1%) variance across patients were removed. The data from disparate sources were consolided and merged by the ID patients. For testing purposes, the number of molecular markers was limited to 2000 DEGs ranked by the highest difference in the gene expression level between tumor and normal tissues ([exampleData_TCGA_LUAD_2000.csv](https://github.com/biocsuwb/EnsembleFS-package/tree/main/data)). 
 
 ### Load omics data
 ```r
@@ -67,8 +68,10 @@ data_METH.load_data()
 data_RNA.load_data()
 data_RPPA.load_data()
 ```
+
 ## Example 1 - Construct the predictive model with molecular data by using the hybrid feature selection aproach
 
+### Prepare omic data for machine learning
 #### Remove duplicates from data sets (optional).
 ```r
 data_CNA.omic_data = data_CNA.omic_data.drop_duplicates(subset='id', keep='first')
@@ -123,7 +126,6 @@ Input parameter values :
 ```
 #### Set up the configuration parameters for selected feature selection method
 ```r
-- id_path = "E:/models/AllIDs.xlsx"
 - probabilities = True
 ```
 #### Option 1 -  use a one feature filter to select Ntop features from molecular data sets
@@ -140,40 +142,42 @@ data_METH.feature_selection(method="fcbf", n_features=100)
 data_RNA.feature_selection(method="relief", n_features=100)
 data_RPPA.feature_selection(method="mrmr", n_features=100)
 ```
-### Build and evaluate the predictive model 
-```
-trainer_RPPA = mb.OmicsModelBuilding(id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA", patient_ids=data_RPPA.ID)
+### Build and evaluate the predictive model with omic data
+#### Input parameters of OmicsModelBuilding class from modelBuilding module
+Syntax: modelBuilding.OmicsModelBuilding(id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA", patient_ids=data_RPPA.ID)
+Input parameters:
+- path to .xlsx or .csv format file with id of all samples: ***id_path***;
+- model name: ***modelName***;
+- id samples: ***patient_ids***;
+#### Input parameters of train_and_evaluate() method from modelBuilding module
+Syntax: .train_and_evaluate(model_type='random_forest', return_probabilities=True)
+Input parameters:
+- binary classifier: ***model_type = "random_forest", "svc", "logistic_reg"***;
+***return_probabilities*** - model return the values of prediction vector as probabilities for return_probabilities=True and as logit values for return_probabilities=False;
+
+```r
+id_path = "E:/models/AllIDs.xlsx"
+trainer_RPPA = mb.OmicsModelBuilding(id_path = id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA", patient_ids=data_RPPA.ID)
 trainer_RPPA.cross_validate()
 trainer_RPPA.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
+# save model result (optional) 
 trainer_RPPA.pickle_save()
-trainer_RPPA_timeStop = trainer_RPPA_timeStop = time.time()
 
-
-trainer_METH_timeStart = time.time()
 trainer_METH = mb.OmicsModelBuilding(id_path, data_METH.X, data_METH.y, modelName="METH", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices, patient_ids=data_RPPA.ID)
 trainer_METH.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
-trainer_METH.pickle_save()
-trainer_METH_timeStop = time.time()
-trainer_METH_time = trainer_METH_timeStop - trainer_METH_timeStart
 
 ```
-#### Syntax of feature_selection() method from dataPreprocessing module
-dataPreprocessing.feature_selection(method = None, n_features = 100, correlation_treshold = 0.75)
-Input parameter values :
-- feature selection methods: ***method = c("utest", "mdfs", "fcbf", "relief", "mrmr")***;
-- number of selected Ntop features: ***n_features = 100***;
-- Spearman's rank correlation coefficient <0, 1>: ***correlation_treshold = 0.75***;
-```
+### Build and evaluate the predictive model with image data
+#### Input parameters of ImageDataPreprocessing class from modelBuilding module
+Syntax: modelBuilding.OmicsModelBuilding(id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA", patient_ids=data_RPPA.ID)
+Input parameters:
+- path to .xlsx or .csv format file with id of all samples: ***id_path***;
+- model name: ***modelName***;
+- id samples: ***patient_ids***;
 
-- validation methods: ***method.cv = c('kfoldcv','rsampling')***;
-- number of repetitions: ***niter = 10***;
-- train-test-split the data: ***k = 3*** for stratified k-fold cross-validation and ***test.size = 0.3*** for random sampling.
-
-
-
-Kod odnoszący się do wczytywania, trenowania i walidacji danych obrazowych wygląda podobnie. Na koniec również uzyskujemy wektor prawdopodobieństw (dane syntetyczne), który następnie stanowić będzie jedną z cech danych tabelarycznych modelu zintegrowanego.
 
 ```
+### Prepare omic data for machine learning
 data = dp.ImageDataPreprocessing()
 data.imagesPrep('D:/Magisterka/Dane_LGG', "E:/Magisterka/AllIDs.xlsx")
 
