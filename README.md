@@ -28,7 +28,15 @@ or:
 
 pip install GlioMRInter==1.0
 ```
-
+## Import module
+```r
+from GlioMRInter import dataPreprocessing as dp
+from GlioMRInter import modelBuilding as mb
+from GlioMRInter import dataVisualization as dv
+import time
+import pandas as pd
+import numpy as np
+```
 ## Example data sets
 
 To demonstrate the functionality of GlioMRInter the different type of molecular data and image data from the Cancer Genome Atlas Low Grade Glioma (TCGA-LGG) project were used.
@@ -43,8 +51,6 @@ The following type of data were used:
 - MRI image data.
 
 The preprocessing of molecular data involved standard steps, namely, the log2 transformation of data was performed and the features with zero and near-zero (1%) variance across patients were removed. The data from disparate sources were consolided and merged by the ID patients. For testing purposes, the number of molecular markers was limited to 2000 DEGs ranked by the highest difference in the gene expression level between tumor and normal tissues ([exampleData_TCGA_LUAD_2000.csv](https://github.com/biocsuwb/EnsembleFS-package/tree/main/data)). 
-
-## Example 1 - Construct the individual predictive model from molecular data
 
 ### Load omics data
 ```r
@@ -61,9 +67,9 @@ data_METH.load_data()
 data_RNA.load_data()
 data_RPPA.load_data()
 ```
+## Example 1 - Construct the predictive model with molecular data by using the hybrid feature selection aproach
 
 #### Remove duplicates from data sets (optional).
-
 ```r
 data_CNA.omic_data = data_CNA.omic_data.drop_duplicates(subset='id', keep='first')
 data_METH.omic_data = data_METH.omic_data.drop_duplicates(subset='id', keep='first')
@@ -108,43 +114,40 @@ data_RPPA.normalize_data()
 ```
 
 ### Perform feature selection (optional)
-#### Model (optional) configuration parameters
-EnsembleFS allows the user to set some parameter values, such as:
-- feature selection methods: ***method = c("utest", "fs.mcfs", "fs.mrmr", "fs.mdfs.1D", "fs.mdfs.2D")***;
-- U-test and MDFS parameter, multitest correction: ***adjust = c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none")***;
-- U-test and MDFS parameter, significance level: ***alpha = 0.05***;
-- MRMR parameter, number of significant features: ***feature.number = 100***;
-- MCFS parameter, cut-off method: ***cutoff.method = c("permutations", "criticalAngle", "kmeans", "mean", "contrast")***;
-- correlation coefficient: ***level.cor = 1***;
-- validation methods: ***method.cv = c('kfoldcv','rsampling')***;
-- number of repetitions: ***niter = 10***;
-- train-test-split the data: ***k = 3*** for stratified k-fold cross-validation and ***test.size = 0.3*** for random sampling.
-
-#### Set up the configuration parameters for feature selection method
+#### Input parameters of feature_selection() method from dataPreprocessing module
+Syntax: dataPreprocessing.feature_selection(method = None, n_features = 100, correlation_treshold = 0.75)
+Input parameter values :
+- feature selection methods: ***method = "utest", "mdfs", "fcbf", "relief", "mrmr"***;
+- number of selected Ntop relevant features: ***n_features = 100***;
+- Spearman's rank correlation coefficient <0, 1>: ***correlation_treshold = 0.75***;
+```
+#### Set up the configuration parameters for selected feature selection method
 ```r
-- method = *** "mdfs1d"***;
-- features = 100
 - id_path = "E:/models/AllIDs.xlsx"
 - probabilities = True
 ```
-
-data_CNA.feature_selection(method=method, n_features=features)
-data_METH.feature_selection(method=method, n_features=features)
-data_RNA.feature_selection(method=method, n_features=features)
-data_RPPA.feature_selection(method=method, n_features=features)
-
-
-
-Budowa modeli odbywa się z wykorzystaniem zewnętrznej kroswalidacji. Mamy pewność, że zewnętrzna kroswalidacja mimo zastosowania różnych typów danych (przy odpowiadających sobie indeksach) zadziała jak powinna. Dla każdego zbioru zostaje zbudowany, wytrenowany i zwalidowany model, który następnie przechowuje wyprodukowane zmienne syntetyczne. Poniżej, celem uniknięcia długich listingów kodu, przedstawiono dwa pierwsze modele. W pierwszym z nich przeprowadzana jest funkcja cross_validate(), natomiast w każdym kolejnym już zamiast niej przekazywane są pola z numerami indeksów dokładnie z tego modelu, który tą funkcję wywołał.
-
+#### Option 1 -  use a one feature filter to select Ntop features from molecular data sets
+```r
+data_CNA.feature_selection(method="mdfs", n_features=100)
+data_METH.feature_selection(method="mdfs", n_features=100)
+data_RNA.feature_selection(method="mdfs", n_features=100)
+data_RPPA.feature_selection(method="mdfs", n_features=100)
 ```
-trainer_RPPA_timeStart = time.time()
+#### Option 2 -  use a different feature filters to select Ntop relevant features from molecular data sets
+```r
+data_CNA.feature_selection(method="mdfs", n_features=100)
+data_METH.feature_selection(method="fcbf", n_features=100)
+data_RNA.feature_selection(method="relief", n_features=100)
+data_RPPA.feature_selection(method="mrmr", n_features=100)
+```
+### Build and evaluate the predictive model 
+```
 trainer_RPPA = mb.OmicsModelBuilding(id_path, data_RPPA.X, data_RPPA.y, modelName="RPPA", patient_ids=data_RPPA.ID)
 trainer_RPPA.cross_validate()
 trainer_RPPA.train_and_evaluate(model_type='random_forest', return_probabilities=probabilities)
 trainer_RPPA.pickle_save()
 trainer_RPPA_timeStop = trainer_RPPA_timeStop = time.time()
-trainer_RPPA_time = trainer_RPPA_timeStop - trainer_RPPA_timeStart
+
 
 trainer_METH_timeStart = time.time()
 trainer_METH = mb.OmicsModelBuilding(id_path, data_METH.X, data_METH.y, modelName="METH", train_indices=trainer_RPPA.train_indices, test_indices=trainer_RPPA.test_indices, patient_ids=data_RPPA.ID)
@@ -154,6 +157,19 @@ trainer_METH_timeStop = time.time()
 trainer_METH_time = trainer_METH_timeStop - trainer_METH_timeStart
 
 ```
+#### Syntax of feature_selection() method from dataPreprocessing module
+dataPreprocessing.feature_selection(method = None, n_features = 100, correlation_treshold = 0.75)
+Input parameter values :
+- feature selection methods: ***method = c("utest", "mdfs", "fcbf", "relief", "mrmr")***;
+- number of selected Ntop features: ***n_features = 100***;
+- Spearman's rank correlation coefficient <0, 1>: ***correlation_treshold = 0.75***;
+```
+
+- validation methods: ***method.cv = c('kfoldcv','rsampling')***;
+- number of repetitions: ***niter = 10***;
+- train-test-split the data: ***k = 3*** for stratified k-fold cross-validation and ***test.size = 0.3*** for random sampling.
+
+
 
 Kod odnoszący się do wczytywania, trenowania i walidacji danych obrazowych wygląda podobnie. Na koniec również uzyskujemy wektor prawdopodobieństw (dane syntetyczne), który następnie stanowić będzie jedną z cech danych tabelarycznych modelu zintegrowanego.
 
@@ -214,14 +230,4 @@ trainer_ALL_time = trainer_ALL_timeStop - trainer_ALL_timeStart
 
 ```
 
-## Licencja
-
-Ten projekt jest licencjonowany na podstawie licencji MIT. Pełny tekst licencji znajduje się w pliku LICENSE.
-
-## Autorzy
-
-Kacper Stasiełuk; kacperstasieluk@gmail.com
-
-## Wkład 
-
-Jeśli chcesz wnieść wkład do tego projektu, możesz to zrobić, tworząc nowy "pull request". Prosimy o skontaktowanie się z nami przed rozpoczęciem pracy, aby upewnić się, że Twój wkład jest zgodny z kierunkiem, w którym podąża projekt.
+## Example 2 - To compare the performance of prediction models or/and select the best performing predictive model the individual models can be build and evaluate
