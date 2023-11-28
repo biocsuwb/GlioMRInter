@@ -69,7 +69,7 @@ data_RNA.load_data()
 data_RPPA.load_data()
 ```
 
-## Example 1 - Construct the predictive model with molecular data by using the hybrid feature selection aproach
+## Example 1 - Construct the predictive model with molecular data by using the hybrid feature selection approach
 
 ### Prepare omic data for machine learning
 #### Remove duplicates from data sets (optional).
@@ -182,7 +182,7 @@ Input parameters:
 - model name: ***modelName***;
 - id samples: ***patient_ids***;
 
-###  Prepare omic data for machine learning
+###  Prepare image data for CNN learning 
 ```r
 data = dp.ImageDataPreprocessing()
 data.imagesPrep('D:/Magisterka/Dane_LGG', "E:/Magisterka/AllIDs.xlsx")
@@ -193,8 +193,6 @@ trainer_IMG = mb.ImageModelBuilding(X, y)
 model = trainer_IMG.build_model() 
 images_prob = trainer_IMG.cross_validate(data.patient_ids)
 ```
-
-
 
 Fragment kodu przedstawia integrację danych klinicznych, omicznych i obrazowych w celu utworzenia modelu zintegrowanego. Wykorzystuje do tego utworzone wcześniej modele oraz dodatkowe dane kliniczne.
 
