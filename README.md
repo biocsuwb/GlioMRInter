@@ -1,8 +1,8 @@
-# GlioMRInter: python package for clinical, multi-omics and image glioma data integration and analysis
+# IntegraCIO: python package for clinical, multi-omics and image glioma data integration and analysis
 ## Description
-GlioMRInter is a system for integrating large clinical, omics and imaging data sets to support the diagnosis or prognosis of patients with central nervous system tumors using advanced supervised learning methods, i.e. deep neural networks and machine learning.
+IntegraCIO is a system for integrating large clinical, omics and imaging data sets to support the diagnosis or prognosis of patients with central nervous system tumors using advanced supervised learning methods, i.e. deep neural networks and machine learning.
 
-**GlioMRInter is a Python package that allows the user to:**
+**IntegraCIO is a Python package that allows the user to:**
 * filter the most informative biomarkers from molecular data generated from high-throughput experiments;
 * remove redundant and correlated features (biomarkes) from the obtained feature subsets;
 * build and evaluate individual predictive model (binary task) with multiple omics data by using the random forest or support vector classifier (SVC) algorithms and machine learning validation techniques;
@@ -14,11 +14,11 @@ GlioMRInter is a system for integrating large clinical, omics and imaging data s
 * save and visualize the data and model results in the form of plots and tables;
 
 ![Fig.1](https://github.com/biocsuwb/Images/blob/main/Scheme1G.png?raw=true)
-Fig.1 The GlioMRInter scheme.
+Fig.1 The IntegraCIO scheme.
 
 # Description of used data sets
 
-To demonstrate the functionality of GlioMRInter the different type of molecular data and image data from the Cancer Genome Atlas Low Grade Glioma (TCGA-LGG) project were used.
+To demonstrate the functionality of IntegraCIO the different type of molecular data and image data from the Cancer Genome Atlas Low Grade Glioma (TCGA-LGG) project were used.
 Raw data sets can be download from The Cancer Genome Atlas database ([TCGA](https://www.cancer.gov/tcga)) and The Cancer Imaging Program database ([TCIA]([The Cancer Imaging Program](https://www.cancerimagingarchive.net/)))
 The following type of data were used:
 - clinical data (CD);
@@ -35,19 +35,19 @@ The preprocessing of molecular data involved standard steps, namely, the log2 tr
 ## Install the development version from GitHub:
 To install this package, clone the repository and install with pip:
 ```r
-git clone https://github.com/GlioMRInter/GlioMRInter
-cd GlioMRInter
+git clone https://github.com/IntegraCIO/IntegraCIO
+cd IntegraCIO
 pip install .
 
 or:
 
-pip install GlioMRInter==1.0
+pip install IntegraCIO==1.0
 ```
 ## Import module
 ```r
-from GlioMRInter import dataPreprocessing as dp
-from GlioMRInter import modelBuilding as mb
-from GlioMRInter import dataVisualization as dv
+from IntegraCIO import dataPreprocessing as dp
+from IntegraCIO import modelBuilding as mb
+from IntegraCIO import dataVisualization as dv
 import time
 import pandas as pd
 import numpy as np
