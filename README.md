@@ -53,22 +53,142 @@ import time
 import pandas as pd
 import numpy as np
 ```
-
-### Load omics data
+## Set path to data
+### Set path to folders with data sets (clinical, omic, images)
 ```r
-download.file("https://raw.githubusercontent.com/biocsuwb/EnsembleFS-package/main/data/correctData/df.METH.merge.image.LGG.csv", 
-              destfile = "correctData/df.METH.merge.image.LGG.csv", method = "curl")
-
-data_CNA = dp.OmicDataPreprocessing(path='correctData/df.CNV.merge.image.LGG.csv')
-data_METH = dp.OmicDataPreprocessing(path='correctData/df.METH.merge.image.LGG.csv')
-data_RNA = dp.OmicDataPreprocessing(path='correctData/df.RNA.merge.image.LGG.csv')
-data_RPPA = dp.OmicDataPreprocessing(path='correctData/df.RPPA.merge.image.LGG.csv')
-
-data_CNA.load_data()
-data_METH.load_data()
-data_RNA.load_data()
-data_RPPA.load_data()
+clinic_data_path = os.path.join(os.getcwd(),'data')
+omic_data_path = os.path.join(os.getcwd(),'data')
+image_data_path = 'c:\\Users\\Images'
 ```
+
+### Set path to save model results
+```r
+model_path = os.path.join(os.getcwd(),'results') 
+```
+## Data preprocessing
+### Image data preprocessing
+```r
+image_data = dp.ImageDataPreprocessing()
+image_data.imagesPrep(image_data_path, ids_path)
+image_patient_ids = set(image_data.patient_ids)
+```
+
+### Omic data preprocessing
+```r
+omic_datasets = []
+for omic_path in omic_data_path:
+    omic_data = dp.OmicDataPreprocessing(path=omic_path)
+    omic_data.load_data()
+    omic_data.omic_data = omic_data.omic_data.drop_duplicates(subset='id', keep='first')
+    omic_datasets.append(omic_data)
+```
+
+### Integration data sets by id patients (3 możliwe warianty: clinical, omic, images or omic, images or clinical, omic)
+
+```r
+
+```
+Show list id patients with integrated data
+```r
+
+```
+Save integrated data sets to files
+```r
+
+```
+
+### Split data on traning and test data
+Preform k-fold crossvalidation repeated n times and save id patients of crossvalidated subsets to pickle
+```r
+
+```
+
+### Perform feature selection on omic dataset
+```r
+
+```
+Show feature ranking for selected feature selection method
+```r
+
+```
+### Build basic predictive models from omics data
+```r
+
+```
+Show model result: the mean values of performance metrics and MSE errors
+```r
+
+```
+
+### Build predictive models using n-filter and one classifier
+```r
+
+```
+Compare and print results performance metrics (selected by user) for n-filters
+```r
+
+```
+
+### Select/load the best predictive models for meta-classifier for each of omic data sets
+```r
+
+```
+
+
+### Build CNN model for selected architecture
+Show model result: the mean values of performance metrics and MSE errors
+```r
+
+```
+
+### Build predictive models using n-selected architectures
+```r
+
+```
+Compare and print results performance metrics (set by user) for n-CNN architectures
+```r
+
+```
+### Select/load the best predictive CNN models for meta-classifier
+```r
+
+```
+### Perform feature selection using Boruta algorithm for clinical data
+```r
+
+```
+Print ranking of relevant clinical data d\selected by Boruta
+```r
+
+```
+### Build model for selected classifier with Boruta
+
+```r
+
+```
+Show model result: the mean values of performance metrics and MSE errors
+```r
+
+```
+### Build meta-classifier using selected classifier and selected omic/clinical/image data
+Show model result: the mean values of performance metrics and MSE errors
+```r
+
+```
+## Visualization of results
+Plot boxplot (selected performance metric) for basic models (omic dataset) for different feature filters
+```r
+
+```
+Plot boxplot (selected performance metric) for basic image models  for different CNN architectures
+```r
+
+```
+Plot boxplot (selected performance metric) for best model with clinical, omic datasets and images
+```r
+
+```
+
 
 ## Example 1 - Construct the predictive model with molecular data by using the hybrid feature selection approach
 
