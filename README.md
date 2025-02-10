@@ -13,7 +13,8 @@ IntegraCIO is a system for integrating large clinical, omics and imaging data se
 * establish the selected parameters for predictive models, such as: ;
 * save and visualize the data and model results in the form of plots and tables;
 
-![Fig.1](https://github.com/biocsuwb/Images/blob/main/Scheme1G.png?raw=true)
+![Fig.1](https://github.com/biocsuwb/Images/blob/main/IntegraCIO.png?raw=true)
+
 Fig.1 The IntegraCIO scheme.
 
 # Description of used data sets
