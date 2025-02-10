@@ -17,6 +17,9 @@ IntegraCIO is a system for integrating large clinical, omics and imaging data se
 
 Fig.1 The IntegraCIO scheme.
 
+**Limitation**
+To build predictive models needs at least 2 predictor variables to run for clinical and omics data.
+
 # Description of used data sets
 
 To demonstrate the functionality of IntegraCIO the different type of molecular data and image data from the Cancer Genome Atlas Low Grade Glioma (TCGA-LGG) project were used.
